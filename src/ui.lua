@@ -1108,9 +1108,16 @@ function UI.drawInventoryButton(inventory, x, y)
     -- Register click zone
     UI.registerZone("INVENTORY_BTN", x, y, btnW, btnH)
     
-    -- Draw expanded panel if open
+    -- Draw expanded panel if open (expand to the left since button is on right)
     if UI.inventoryOpen and #inventory > 0 then
-        UI.drawInventoryPanel(inventory, x, y + btnH + 5)
+        local iconSize = 32
+        local gap = 4
+        local cols = 5
+        local panelPadding = 10
+        local rows = math.ceil(#inventory / cols)
+        local panelW = cols * (iconSize + gap) - gap + panelPadding * 2
+        -- Position panel to the left of the button
+        UI.drawInventoryPanel(inventory, x + btnW - panelW, y + btnH + 5)
     end
 end
 
@@ -1118,7 +1125,7 @@ end
 function UI.drawInventoryPanel(inventory, x, y)
     local iconSize = 32
     local gap = 4
-    local cols = 6
+    local cols = 5
     local panelPadding = 10
     
     local rows = math.ceil(#inventory / cols)
@@ -1134,6 +1141,7 @@ function UI.drawInventoryPanel(inventory, x, y)
     local mx, my = love.mouse.getPosition()
     local hoveredSym = nil
     
+    local cols = 5
     for i, sym in ipairs(inventory) do
         local col = (i - 1) % cols
         local row = math.floor((i - 1) / cols)
@@ -1441,52 +1449,24 @@ function UI.drawShop(shop, engine)
         end
     end
     
-    -- Bottom buttons
-    local btnY = screenH - 80
-    local btnW, btnH = 150, 45
-    
-    -- Reroll button
-    local rerollCost = shop:getRerollCost()
-    local canReroll = engine.money >= rerollCost
-    local rerollX = screenW / 2 - btnW - 20
-    
-    love.graphics.setColor(canReroll and {0.2, 0.3, 0.5} or {0.2, 0.2, 0.2})
-    love.graphics.rectangle("fill", rerollX, btnY, btnW, btnH, 8, 8)
-    love.graphics.setColor(canReroll and {0.4, 0.6, 0.9} or {0.3, 0.3, 0.3})
-    love.graphics.rectangle("line", rerollX, btnY, btnW, btnH, 8, 8)
-    
-    love.graphics.setFont(_G.Fonts.normal)
-    love.graphics.setColor(canReroll and {1, 1, 1} or {0.5, 0.5, 0.5})
-    love.graphics.printf(i18n.t("ui_reroll") .. " $" .. rerollCost, rerollX, btnY + 12, btnW, "center")
-    UI.registerZone("SHOP_REROLL", rerollX, btnY, btnW, btnH)
-    
-    -- Leave button
-    local leaveX = screenW / 2 + 20
-    love.graphics.setColor(0.3, 0.5, 0.3)
-    love.graphics.rectangle("fill", leaveX, btnY, btnW, btnH, 8, 8)
-    love.graphics.setColor(0.5, 0.8, 0.5)
-    love.graphics.rectangle("line", leaveX, btnY, btnW, btnH, 8, 8)
-    
-    love.graphics.setColor(1, 1, 1)
-    love.graphics.printf(i18n.t("ui_continue"), leaveX, btnY + 12, btnW, "center")
-    UI.registerZone("SHOP_LEAVE", leaveX, btnY, btnW, btnH)
-    
-    -- Inventory section at bottom (for selling/upgrading)
+    -- Inventory section (above buttons, below shop cards)
     local Upgrade = require("src.core.upgrade")
-    local invY = screenH - 180
-    local invCellSize = 45
+    local Config = require("src.core.config")
+    local invY = screenH + Config.layout.shop.inventoryY  -- From bottom
+    local invCellSize = Config.layout.shop.inventoryCellSize
+    local invCellGap = Config.layout.shop.inventoryCellGap
     local invStartX = 50
     
     love.graphics.setFont(_G.Fonts.small)
     love.graphics.setColor(0.7, 0.7, 0.8)
-    love.graphics.print(i18n.t("ui_your_symbols") .. " (" .. #engine.inventory .. ")", invStartX, invY - 20)
+    love.graphics.print(i18n.t("ui_your_symbols") .. " (" .. #engine.inventory .. ")", invStartX, invY - 18)
     
-    -- Draw inventory symbols (scrollable area)
-    local maxVisible = math.floor((screenW - 100) / (invCellSize + 5))
+    -- Draw inventory symbols
+    local maxVisible = math.floor((screenW - 100) / (invCellSize + invCellGap))
     for i, sym in ipairs(engine.inventory) do
         if i > maxVisible then break end
         
-        local x = invStartX + (i - 1) * (invCellSize + 5)
+        local x = invStartX + (i - 1) * (invCellSize + invCellGap)
         local y = invY
         
         local hovered = mx >= x and mx <= x + invCellSize and my >= y and my <= y + invCellSize
@@ -1514,10 +1494,12 @@ function UI.drawShop(shop, engine)
         love.graphics.rectangle("line", x, y, invCellSize, invCellSize, 4, 4)
         love.graphics.setLineWidth(1)
         
-        -- Symbol
-        if sym.renderer then
-            sym.renderer:draw(x + 5, y + 5, invCellSize - 10, invCellSize - 10)
-        end
+        -- Symbol (draw character directly for small cells)
+        local Registry = require("src.core.registry")
+        local def = Registry.symbol_types[sym.key]
+        love.graphics.setFont(_G.Fonts.normal)
+        love.graphics.setColor(def and def.color or {1, 1, 1})
+        love.graphics.printf(def and def.char or "?", x, y + 5, invCellSize, "center")
         
         -- Level badge
         local level = Upgrade.getLevel(sym)
@@ -1527,17 +1509,47 @@ function UI.drawShop(shop, engine)
             love.graphics.print("+" .. (level - 1), x + 2, y + 2)
         end
         
-        -- Upgrade progress indicator (small badge inside cell)
+        -- Upgrade progress indicator
         if progress.current >= 2 then
             love.graphics.setColor(0, 0, 0, 0.8)
-            love.graphics.rectangle("fill", x + 2, y + invCellSize - 14, 20, 12, 2, 2)
+            love.graphics.rectangle("fill", x + 2, y + invCellSize - 12, 18, 10, 2, 2)
             love.graphics.setColor(0.3, 1, 0.3)
             love.graphics.setFont(_G.Fonts.small)
-            love.graphics.print(progress.current .. "/3", x + 4, y + invCellSize - 13)
+            love.graphics.print(progress.current .. "/3", x + 3, y + invCellSize - 12)
         end
         
         UI.registerZone("INV_SYM_" .. i, x, y, invCellSize, invCellSize)
     end
+    
+    -- Bottom buttons
+    local btnY = screenH - 50
+    local btnW, btnH = 120, 35
+    
+    -- Reroll button
+    local rerollCost = shop:getRerollCost()
+    local canReroll = engine.money >= rerollCost
+    local rerollX = screenW / 2 - btnW - 20
+    
+    love.graphics.setColor(canReroll and {0.2, 0.3, 0.5} or {0.2, 0.2, 0.2})
+    love.graphics.rectangle("fill", rerollX, btnY, btnW, btnH, 8, 8)
+    love.graphics.setColor(canReroll and {0.4, 0.6, 0.9} or {0.3, 0.3, 0.3})
+    love.graphics.rectangle("line", rerollX, btnY, btnW, btnH, 8, 8)
+    
+    love.graphics.setFont(_G.Fonts.normal)
+    love.graphics.setColor(canReroll and {1, 1, 1} or {0.5, 0.5, 0.5})
+    love.graphics.printf(i18n.t("ui_reroll") .. " $" .. rerollCost, rerollX, btnY + 8, btnW, "center")
+    UI.registerZone("SHOP_REROLL", rerollX, btnY, btnW, btnH)
+    
+    -- Leave button
+    local leaveX = screenW / 2 + 20
+    love.graphics.setColor(0.3, 0.5, 0.3)
+    love.graphics.rectangle("fill", leaveX, btnY, btnW, btnH, 8, 8)
+    love.graphics.setColor(0.5, 0.8, 0.5)
+    love.graphics.rectangle("line", leaveX, btnY, btnW, btnH, 8, 8)
+    
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.printf(i18n.t("ui_continue"), leaveX, btnY + 8, btnW, "center")
+    UI.registerZone("SHOP_LEAVE", leaveX, btnY, btnW, btnH)
 end
 
 -- Draw random event screen

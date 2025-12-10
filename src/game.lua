@@ -33,6 +33,9 @@ function Game:init()
     -- Initialize displayed money for effects
     Effects.setDisplayedMoney(self.money)
     
+    -- Set coin target to HUD position (from Config)
+    Effects.setCoinTarget(Config.hud.coinTargetX, Config.hud.coinTargetY)
+    
     -- Set up coin collection callback - adds money when coins arrive
     Effects.onCoinCollected = function(value)
         self.money = self.money + value
@@ -42,6 +45,9 @@ function Game:init()
     table.insert(self.relics, Registry.createRelic("lucky_cat"))
     -- Give a starter removal token
     table.insert(self.consumables, Registry.createConsumable("removal_token"))
+    
+    -- Start BGM
+    Effects.playBGM()
 end
 
 -- Input handling (Adapter)
@@ -189,15 +195,16 @@ function Game:draw()
         }
     end
     
-    -- Draw Game Area
-    UI.drawGrid(self.grid, 300, 100, 80, animState)
+    -- Draw Game Area (use Config for positions)
+    UI.drawGrid(self.grid, Config.grid.offsetX, Config.grid.offsetY, Config.grid.cellSize, animState)
     
     -- Only draw HUD and Logs when not in overlay states
     if self.state ~= "DRAFT" and self.state ~= "GAME_OVER" and self.state ~= "RENT_PAID" and self.state ~= "SHOP" then
         UI.drawHUD(self.money, self.rent, self.spins_left, #self.inventory, self.state == "SPINNING", self.floor)
-        UI.drawLogs(self.logs, 50, 280)
-        -- Draw inventory button (collapsible)
-        UI.drawInventoryButton(self.inventory, 50, 360)
+        UI.drawLogs(self.logs, Config.layout.game.logsX, Config.layout.game.logsY)
+        -- Draw inventory button (collapsible) - on right side
+        local invBtnX = love.graphics.getWidth() + Config.layout.game.inventoryBtnX
+        UI.drawInventoryButton(self.inventory, invBtnX, Config.layout.game.inventoryBtnY)
     end
     
     if self.state == "DRAFT" then

@@ -210,6 +210,103 @@ Config.audio = {
 }
 
 --------------------------------------------------------------------------------
+-- Layout Settings (screen positioning)
+--------------------------------------------------------------------------------
+
+Config.layout = {
+    -- Main game screen
+    game = {
+        logsX = 25,
+        logsY = 235,
+        inventoryBtnX = -130,  -- Negative = from right edge
+        inventoryBtnY = 100,
+    },
+    
+    -- Shop screen
+    shop = {
+        titleY = 30,
+        moneyY = 70,
+        cardsY = 120,
+        cardWidth = 130,
+        cardHeight = 180,
+        cardGap = 15,
+        
+        -- Inventory in shop
+        inventoryY = -130,  -- Negative = from bottom
+        inventoryCellSize = 42,
+        inventoryCellGap = 10,
+        
+        -- Buttons
+        buttonY = -50,  -- Negative = from bottom
+        buttonWidth = 120,
+        buttonHeight = 35,
+    },
+}
+
+--------------------------------------------------------------------------------
+-- UI Component Settings
+--------------------------------------------------------------------------------
+
+Config.ui = {
+    -- Inventory button
+    inventoryBtn = {
+        width = 80,
+        height = 35,
+    },
+    
+    -- Inventory panel
+    inventoryPanel = {
+        iconSize = 32,
+        gap = 4,
+        cols = 5,
+        padding = 10,
+    },
+    
+    -- Tooltips
+    tooltip = {
+        width = 200,
+        padding = 10,
+    },
+    
+    -- Buttons
+    button = {
+        cornerRadius = 6,
+    },
+}
+
+--------------------------------------------------------------------------------
+-- Effects Settings
+--------------------------------------------------------------------------------
+
+Config.effects = {
+    -- Particles
+    particle = {
+        baseSpeed = 100,
+        speedVariance = 50,
+        gravity = 100,
+    },
+    
+    -- Sparkles
+    sparkle = {
+        count = 8,
+        speed = 80,
+        speedVariance = 40,
+    },
+    
+    -- Screen shake
+    shake = {
+        defaultIntensity = 10,
+        defaultDuration = 0.3,
+    },
+    
+    -- Coin burst
+    coinBurst = {
+        speed = 100,
+        speedVariance = 80,
+    },
+}
+
+--------------------------------------------------------------------------------
 -- Helper Functions
 --------------------------------------------------------------------------------
 

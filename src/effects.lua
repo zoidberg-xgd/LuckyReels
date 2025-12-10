@@ -42,7 +42,8 @@ Effects.interactions = {}
 Effects.sounds = {}
 
 -- Target position for coin collection (HUD money position)
-Effects.coinTargetX = 50
+-- Coin target will be set from Config.hud
+Effects.coinTargetX = 50  -- Default, updated by setCoinTarget or from Config
 Effects.coinTargetY = 50
 
 -- Pending coin value to add (for animated counting)
@@ -78,13 +79,42 @@ function Effects.loadSounds()
         win = "sounds/win.wav",
         big_win = "sounds/big_win.wav",
         coin = "sounds/coin.wav",
-        click = "sounds/click.wav"
+        click = "sounds/click.wav",
+        score = "sounds/score.wav",
     }
     
     for name, path in pairs(soundFiles) do
         if love.filesystem.getInfo(path) then
             Effects.sounds[name] = love.audio.newSource(path, "static")
         end
+    end
+    
+    -- Load BGM
+    if love.filesystem.getInfo("music/bgm.wav") then
+        Effects.bgm = love.audio.newSource("music/bgm.wav", "stream")
+        Effects.bgm:setLooping(true)
+        Effects.bgm:setVolume(0.3)
+    end
+end
+
+-- Start BGM
+function Effects.playBGM()
+    if Effects.bgm and not Effects.bgm:isPlaying() then
+        Effects.bgm:play()
+    end
+end
+
+-- Stop BGM
+function Effects.stopBGM()
+    if Effects.bgm then
+        Effects.bgm:stop()
+    end
+end
+
+-- Set BGM volume
+function Effects.setBGMVolume(vol)
+    if Effects.bgm then
+        Effects.bgm:setVolume(vol)
     end
 end
 
