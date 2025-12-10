@@ -8,6 +8,51 @@ local UI = {}
 -- Animation time tracker
 UI.time = 0
 
+--------------------------------------------------------------------------------
+-- Text with outline (for better readability on any background)
+--------------------------------------------------------------------------------
+
+function UI.printOutlined(text, x, y, outlineColor, textColor, outlineWidth)
+    outlineWidth = outlineWidth or 1
+    outlineColor = outlineColor or {0, 0, 0}
+    textColor = textColor or {1, 1, 1}
+    
+    -- Draw outline
+    love.graphics.setColor(outlineColor[1], outlineColor[2], outlineColor[3])
+    for dx = -outlineWidth, outlineWidth do
+        for dy = -outlineWidth, outlineWidth do
+            if dx ~= 0 or dy ~= 0 then
+                love.graphics.print(text, x + dx, y + dy)
+            end
+        end
+    end
+    
+    -- Draw main text
+    love.graphics.setColor(textColor[1], textColor[2], textColor[3])
+    love.graphics.print(text, x, y)
+end
+
+function UI.printfOutlined(text, x, y, width, align, outlineColor, textColor, outlineWidth)
+    outlineWidth = outlineWidth or 1
+    outlineColor = outlineColor or {0, 0, 0}
+    textColor = textColor or {1, 1, 1}
+    align = align or "left"
+    
+    -- Draw outline
+    love.graphics.setColor(outlineColor[1], outlineColor[2], outlineColor[3])
+    for dx = -outlineWidth, outlineWidth do
+        for dy = -outlineWidth, outlineWidth do
+            if dx ~= 0 or dy ~= 0 then
+                love.graphics.printf(text, x + dx, y + dy, width, align)
+            end
+        end
+    end
+    
+    -- Draw main text
+    love.graphics.setColor(textColor[1], textColor[2], textColor[3])
+    love.graphics.printf(text, x, y, width, align)
+end
+
 -- Button hover states and animations
 UI.hoverStates = {}
 UI.buttonScales = {}
@@ -205,13 +250,19 @@ function UI.drawGrid(grid, offsetX, offsetY, cellSize, animState)
                 love.graphics.rectangle("fill", cellX - 4, cellY - 4, cellSize + 8, cellSize + 8, 4, 4)
             end
             
-            -- Darker cell background
-            love.graphics.setColor(0.12, 0.12, 0.2)
+            -- Cell background from theme
+            local Config = require("src.core.config")
+            local cellBg = Config.visual.cell.background
+            love.graphics.setColor(cellBg[1], cellBg[2], cellBg[3])
             love.graphics.rectangle("fill", cellX, cellY, cellSize, cellSize, 3, 3)
             
-            -- Inner shadow effect
-            love.graphics.setColor(0.08, 0.08, 0.15)
-            love.graphics.rectangle("fill", cellX + 2, cellY + 2, cellSize - 4, cellSize - 4, 2, 2)
+            -- Cell border from theme
+            local cellBorder = Config.visual.cell.border
+            local borderWidth = Config.visual.panel.border_width or 1
+            love.graphics.setColor(cellBorder[1], cellBorder[2], cellBorder[3])
+            love.graphics.setLineWidth(borderWidth)
+            love.graphics.rectangle("line", cellX, cellY, cellSize, cellSize, 3, 3)
+            love.graphics.setLineWidth(1)
             
             love.graphics.setScissor(cellX, cellY, cellSize, cellSize)
             
@@ -338,31 +389,37 @@ function UI.drawGrid(grid, offsetX, offsetY, cellSize, animState)
 end
 
 function UI.drawHUD(money, rent, turns, inventoryCount, isSpinning, floor)
+    local Config = require("src.core.config")
     local screenW = love.graphics.getWidth()
     floor = floor or 1
     
-    -- HUD Panel with gradient effect
+    -- HUD Panel with theme
     local hudX, hudY, hudW, hudH = 25, 30, 220, 175
+    local panel = Config.visual.panel
     
     -- Panel shadow
     love.graphics.setColor(0, 0, 0, 0.3)
     love.graphics.rectangle("fill", hudX + 4, hudY + 4, hudW, hudH, 10, 10)
     
-    -- Panel background gradient (simulated)
-    love.graphics.setColor(0.12, 0.12, 0.18, 0.95)
+    -- Panel background from theme
+    local bg = panel.background
+    love.graphics.setColor(bg[1], bg[2], bg[3], bg[4] or 0.95)
     love.graphics.rectangle("fill", hudX, hudY, hudW, hudH, 10, 10)
     
-    -- Panel inner highlight
-    love.graphics.setColor(0.2, 0.2, 0.28, 0.5)
-    love.graphics.rectangle("fill", hudX + 3, hudY + 3, hudW - 6, 30, 8, 8)
-    
-    -- Panel border
-    love.graphics.setColor(0.35, 0.35, 0.45)
-    love.graphics.setLineWidth(2)
+    -- Panel border from theme
+    local border = panel.border
+    love.graphics.setColor(border[1], border[2], border[3])
+    love.graphics.setLineWidth(panel.border_width or 2)
     love.graphics.rectangle("line", hudX, hudY, hudW, hudH, 10, 10)
     love.graphics.setLineWidth(1)
     
     love.graphics.setFont(_G.Fonts.normal)
+    
+    -- Determine outline color based on theme
+    local outlineColor = {0, 0, 0}
+    if Config.theme == "manga" then
+        outlineColor = {1, 1, 1}  -- White outline on light background
+    end
     
     -- Get animated money display
     local displayMoney = Effects.getDisplayedMoney()
@@ -387,7 +444,7 @@ function UI.drawHUD(money, rent, turns, inventoryCount, isSpinning, floor)
     love.graphics.circle("line", iconX + 8, rowY + 10, 10 * coinPulse)
     love.graphics.setLineWidth(1)
     
-    -- Money text with bounce effect
+    -- Money text with bounce effect and outline
     love.graphics.push()
     local textCenterX = textX + 30
     local textCenterY = rowY + 10
@@ -395,16 +452,8 @@ function UI.drawHUD(money, rent, turns, inventoryCount, isSpinning, floor)
     love.graphics.scale(bounceScale, bounceScale)
     love.graphics.translate(-textCenterX, -textCenterY)
     
-    if bounceScale > 1.01 then
-        -- Bright flash when bouncing
-        love.graphics.setColor(1, 1, 0.5)
-    elseif isPending then
-        local pulse = 1 + math.sin(UI.time * 15) * 0.1
-        love.graphics.setColor(1 * pulse, 0.9 * pulse, 0.3)
-    else
-        love.graphics.setColor(1, 0.9, 0.3)
-    end
-    love.graphics.print(tostring(displayMoney), textX, rowY)
+    local moneyColor = Config.visual.colors.money or {1, 0.9, 0.3}
+    UI.printOutlined(tostring(displayMoney), textX, rowY, outlineColor, moneyColor, 1)
     love.graphics.pop()
     
     -- Pending coins indicator
@@ -425,9 +474,9 @@ function UI.drawHUD(money, rent, turns, inventoryCount, isSpinning, floor)
     love.graphics.polygon("fill", iconX + 8, rowY + 2, iconX + 2, rowY + 10, iconX + 14, rowY + 10)
     love.graphics.rectangle("fill", iconX + 4, rowY + 10, 8, 8)
     
-    -- Rent text
-    love.graphics.setColor(1, 0.6, 0.5)
-    love.graphics.print(tostring(rent), textX, rowY)
+    -- Rent text with outline
+    local rentColor = Config.visual.colors.rent or {1, 0.6, 0.5}
+    UI.printOutlined(tostring(rent), textX, rowY, outlineColor, rentColor, 1)
     
     -- Progress bar
     local barX, barW, barH = textX + 50, 80, 12
@@ -458,8 +507,9 @@ function UI.drawHUD(money, rent, turns, inventoryCount, isSpinning, floor)
         end
     end
     
-    love.graphics.setColor(0.5, 1, 0.6)
-    love.graphics.print(turns .. " " .. i18n.t("ui_spins_unit"), textX + 10, rowY)
+    -- Spins text with outline
+    local spinsColor = Config.visual.colors.positive or {0.5, 1, 0.6}
+    UI.printOutlined(turns .. " " .. i18n.t("ui_spins_unit"), textX + 10, rowY, outlineColor, spinsColor, 1)
     
     -- Inventory row
     rowY = rowY + 30
@@ -469,13 +519,14 @@ function UI.drawHUD(money, rent, turns, inventoryCount, isSpinning, floor)
     love.graphics.rectangle("fill", iconX + 2, rowY + 4, 12, 10, 2, 2)
     love.graphics.rectangle("fill", iconX, rowY + 2, 16, 4, 2, 2)
     
-    love.graphics.setColor(0.7, 0.7, 1)
-    love.graphics.print(inventoryCount .. " " .. i18n.t("ui_symbols_unit"), textX, rowY)
+    -- Inventory text with outline
+    local invColor = Config.visual.colors.neutral or {0.7, 0.7, 1}
+    UI.printOutlined(inventoryCount .. " " .. i18n.t("ui_symbols_unit"), textX, rowY, outlineColor, invColor, 1)
     
     -- Floor row
     rowY = rowY + 30
-    love.graphics.setColor(0.9, 0.7, 0.4)
-    love.graphics.print(string.format(i18n.t("ui_floor"), floor), textX, rowY)
+    local floorColor = Config.visual.colors.text or {0.9, 0.7, 0.4}
+    UI.printOutlined(string.format(i18n.t("ui_floor"), floor), textX, rowY, outlineColor, floorColor, 1)
     
     -- ========== SPIN BUTTON ==========
     local btnW, btnH = 440, 75
@@ -495,49 +546,46 @@ function UI.drawHUD(money, rent, turns, inventoryCount, isSpinning, floor)
     local scaledX = btnX - (scaledW - btnW) / 2
     local scaledY = btnY - (scaledH - btnH) / 2
     
-    -- Button outer glow (pulsing)
-    if not isSpinning then
-        local glowAlpha = 0.25 + math.sin(UI.time * 2.5) * 0.15
-        love.graphics.setColor(0.2, 0.9, 0.4, glowAlpha)
-        love.graphics.rectangle("fill", scaledX - 8, scaledY - 8, scaledW + 16, scaledH + 16, 18, 18)
-        love.graphics.setColor(0.3, 1, 0.5, glowAlpha * 0.5)
-        love.graphics.rectangle("fill", scaledX - 4, scaledY - 4, scaledW + 8, scaledH + 8, 15, 15)
-    end
+    -- Get button style from theme
+    local Config = require("src.core.config")
+    local btnStyle = Config.visual.button or {
+        background = {0.22, 0.58, 0.28},
+        background_hover = {0.28, 0.72, 0.35},
+        border = {1, 1, 1},
+        text = {1, 1, 1},
+        border_width = 2.5,
+    }
     
     -- Button shadow
     love.graphics.setColor(0, 0, 0, 0.4)
-    love.graphics.rectangle("fill", scaledX + 3, scaledY + 3, scaledW, scaledH, 14, 14)
+    love.graphics.rectangle("fill", scaledX + 3, scaledY + 3, scaledW, scaledH, 8, 8)
     
-    -- Button background
+    -- Button background from theme
     if isSpinning then
-        love.graphics.setColor(0.25, 0.25, 0.25)
+        love.graphics.setColor(0.4, 0.4, 0.4)
     elseif isHovered then
-        love.graphics.setColor(0.28, 0.72, 0.35)
+        local hoverBg = btnStyle.background_hover or btnStyle.background
+        love.graphics.setColor(hoverBg[1], hoverBg[2], hoverBg[3])
     else
-        love.graphics.setColor(0.22, 0.58, 0.28)
+        local bg = btnStyle.background
+        love.graphics.setColor(bg[1], bg[2], bg[3])
     end
-    love.graphics.rectangle("fill", scaledX, scaledY, scaledW, scaledH, 14, 14)
+    love.graphics.rectangle("fill", scaledX, scaledY, scaledW, scaledH, 8, 8)
     
-    -- Button top highlight
-    love.graphics.setColor(1, 1, 1, 0.18)
-    love.graphics.rectangle("fill", scaledX + 5, scaledY + 5, scaledW - 10, scaledH * 0.35, 10, 10)
-    
-    -- Button border
-    love.graphics.setColor(1, 1, 1, 0.9)
-    love.graphics.setLineWidth(2.5)
-    love.graphics.rectangle("line", scaledX, scaledY, scaledW, scaledH, 14, 14)
+    -- Button border from theme
+    local border = btnStyle.border
+    love.graphics.setColor(border[1], border[2], border[3])
+    love.graphics.setLineWidth(btnStyle.border_width or 2.5)
+    love.graphics.rectangle("line", scaledX, scaledY, scaledW, scaledH, 8, 8)
     love.graphics.setLineWidth(1)
     
     -- Button text
     love.graphics.setFont(_G.Fonts.big)
     local btnText = isSpinning and i18n.t("ui_spinning") or i18n.t("ui_press_spin")
     
-    -- Text shadow
-    love.graphics.setColor(0, 0, 0, 0.6)
-    love.graphics.printf(btnText, scaledX + 2, scaledY + scaledH/2 - 12, scaledW, "center")
-    
-    -- Text
-    love.graphics.setColor(1, 1, 1)
+    -- Text with theme color
+    local textColor = btnStyle.text or {1, 1, 1}
+    love.graphics.setColor(textColor[1], textColor[2], textColor[3])
     love.graphics.printf(btnText, scaledX, scaledY + scaledH/2 - 14, scaledW, "center")
     
     -- Spinning indicator dots

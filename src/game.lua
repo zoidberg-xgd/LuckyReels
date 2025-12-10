@@ -177,6 +177,11 @@ end
 
 -- Draw handling (Adapter)
 function Game:draw()
+    -- Draw background with theme color
+    local bg = Config.visual.background
+    love.graphics.setColor(bg[1], bg[2], bg[3])
+    love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+    
     -- Apply screen shake
     local shakeX, shakeY = Effects.getShakeOffset()
     love.graphics.push()

@@ -174,30 +174,141 @@ Config.animation = {
 -- Visual Settings
 --------------------------------------------------------------------------------
 
-Config.visual = {
-    -- Rarity colors
-    rarity_colors = {
-        [1] = {0.6, 0.6, 0.6},    -- Common: Gray
-        [2] = {0.3, 0.7, 1},      -- Uncommon: Blue
-        [3] = {1, 0.8, 0.2},      -- Rare: Gold
+-- Theme: "manga" for black/white comic style, "default" for colorful
+Config.theme = "manga"
+
+Config.visual = {}
+
+-- Theme definitions
+Config.themes = {
+    default = {
+        -- Background
+        background = {0.08, 0.08, 0.12},
+        
+        -- Rarity colors
+        rarity_colors = {
+            [1] = {0.6, 0.6, 0.6},    -- Common: Gray
+            [2] = {0.3, 0.7, 1},      -- Uncommon: Blue
+            [3] = {1, 0.8, 0.2},      -- Rare: Gold
+        },
+        
+        -- Quality colors (upgrade levels)
+        quality_colors = {
+            [1] = {0.7, 0.7, 0.7},    -- Normal
+            [2] = {0.4, 0.8, 1},      -- Enhanced
+            [3] = {1, 0.6, 0.9},      -- Perfected
+        },
+        
+        -- UI colors
+        colors = {
+            money = {1, 0.9, 0.3},
+            rent = {1, 0.4, 0.3},
+            positive = {0.3, 1, 0.3},
+            negative = {1, 0.3, 0.3},
+            neutral = {0.8, 0.8, 0.3},
+            text = {1, 1, 1},
+            text_dark = {0.1, 0.1, 0.1},
+        },
+        
+        -- Panel style
+        panel = {
+            background = {0.15, 0.15, 0.2, 0.95},
+            border = {0.4, 0.4, 0.5},
+            border_width = 1,
+        },
+        
+        -- Cell style
+        cell = {
+            background = {0.12, 0.12, 0.18},
+            border = {0.3, 0.3, 0.4},
+        },
+        
+        -- Button style
+        button = {
+            background = {0.22, 0.58, 0.28},
+            background_hover = {0.28, 0.72, 0.35},
+            border = {1, 1, 1},
+            text = {1, 1, 1},
+            border_width = 2.5,
+        },
+        
+        -- Card style for shop
+        card = {
+            background = {0.18, 0.18, 0.25},
+            border = {0.4, 0.4, 0.5},
+            border_width = 2,
+        },
     },
     
-    -- Quality colors (upgrade levels)
-    quality_colors = {
-        [1] = {0.7, 0.7, 0.7},    -- Normal
-        [2] = {0.4, 0.8, 1},      -- Enhanced
-        [3] = {1, 0.6, 0.9},      -- Perfected
-    },
-    
-    -- UI colors
-    colors = {
-        money = {1, 0.9, 0.3},
-        rent = {1, 0.4, 0.3},
-        positive = {0.3, 1, 0.3},
-        negative = {1, 0.3, 0.3},
-        neutral = {0.8, 0.8, 0.3},
+    manga = {
+        -- Background - light gray/white
+        background = {0.92, 0.9, 0.88},
+        
+        -- Rarity colors - grayscale
+        rarity_colors = {
+            [1] = {0.5, 0.5, 0.5},    -- Common: Medium gray
+            [2] = {0.3, 0.3, 0.3},    -- Uncommon: Dark gray
+            [3] = {0.1, 0.1, 0.1},    -- Rare: Near black
+        },
+        
+        -- Quality colors - grayscale
+        quality_colors = {
+            [1] = {0.6, 0.6, 0.6},    -- Normal
+            [2] = {0.4, 0.4, 0.4},    -- Enhanced
+            [3] = {0.15, 0.15, 0.15}, -- Perfected
+        },
+        
+        -- UI colors - black/white
+        colors = {
+            money = {0.1, 0.1, 0.1},
+            rent = {0.3, 0.3, 0.3},
+            positive = {0.2, 0.2, 0.2},
+            negative = {0.1, 0.1, 0.1},
+            neutral = {0.4, 0.4, 0.4},
+            text = {0.1, 0.1, 0.1},
+            text_light = {1, 1, 1},
+            text_dark = {0.1, 0.1, 0.1},
+        },
+        
+        -- Panel style - manga boxes
+        panel = {
+            background = {1, 1, 1, 0.98},
+            border = {0.1, 0.1, 0.1},
+            border_width = 3,
+        },
+        
+        -- Cell style
+        cell = {
+            background = {0.98, 0.98, 0.98},
+            border = {0.15, 0.15, 0.15},
+        },
+        
+        -- Button style - manga style
+        button = {
+            background = {0.15, 0.15, 0.15},
+            background_hover = {0.25, 0.25, 0.25},
+            border = {0.1, 0.1, 0.1},
+            text = {1, 1, 1},
+            border_width = 3,
+        },
+        
+        -- Card style for shop
+        card = {
+            background = {1, 1, 1},
+            border = {0.1, 0.1, 0.1},
+            border_width = 2,
+        },
     },
 }
+
+-- Apply current theme to Config.visual
+function Config.applyTheme()
+    local theme = Config.themes[Config.theme] or Config.themes.default
+    Config.visual = theme
+end
+
+-- Initialize theme
+Config.applyTheme()
 
 --------------------------------------------------------------------------------
 -- Audio Settings
