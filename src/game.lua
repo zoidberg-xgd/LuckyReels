@@ -5,6 +5,7 @@ local Effects = require("src.effects")
 local Config = require("src.core.config")
 local API = require("src.core.api")
 local i18n = require("src.i18n")
+local Character = require("src.character")
 
 -- Load Content
 require("src.content.symbols")
@@ -48,6 +49,9 @@ function Game:init()
     
     -- Start BGM
     Effects.playBGM()
+    
+    -- Initialize character
+    self.character = Character.getInstance()
 end
 
 -- Input handling (Adapter)
@@ -62,7 +66,10 @@ function Game:keypressed(key)
     end
     
     if self.state == "IDLE" then
-        if key == "space" then self:spin() end
+        if key == "space" then 
+            self:spin()
+            if self.character then self.character:react("spin") end
+        end
     elseif self.state == "RENT_PAID" then
         if key == "space" or key == "return" then
             self:confirmRentPaid()
@@ -210,6 +217,11 @@ function Game:draw()
         -- Draw inventory button (collapsible) - on right side
         local invBtnX = love.graphics.getWidth() + Config.layout.game.inventoryBtnX
         UI.drawInventoryButton(self.inventory, invBtnX, Config.layout.game.inventoryBtnY)
+        
+        -- Draw character
+        if self.character then
+            self.character:draw()
+        end
     end
     
     if self.state == "DRAFT" then
@@ -263,6 +275,24 @@ function Game:update(dt)
     -- Update effects
     Effects.update(dt)
     UI.update(dt)
+    
+    -- Update character
+    if self.character then
+        self.character:update(dt)
+        -- Make character look at mouse
+        local mx, my = love.mouse.getPosition()
+        self.character:lookAt(mx, my)
+        
+        -- Update character with game state
+        self.character:updateFromGameState({
+            money = self.money,
+            rent = self.rent,
+            floor = self.floor,
+            state = self.state,
+            inventory = self.inventory,
+            spins_left = self.spins_left,
+        })
+    end
     
     -- Sync displayed money with actual money (handles rent payment, etc.)
     Effects.syncDisplayedMoney(self.money)
@@ -345,10 +375,17 @@ function Game:update(dt)
                 Effects.screenFlash(1, 0.9, 0.3, 0.3, 0.15)
                 Effects.addPopup(love.graphics.getWidth()/2 - 50, 200, "+" .. winAmount .. "!", {1, 0.8, 0.2}, 32)
                 Effects.playSound("big_win")
+                -- Character reacts to big win
+                if self.character then self.character:react("big_win") end
             elseif winAmount >= 10 then
                 Effects.screenShake(6, 0.2)
                 Effects.addPopup(love.graphics.getWidth()/2 - 30, 220, "+" .. winAmount, {1, 1, 0.4}, 28)
                 Effects.playSound("win")
+                -- Character reacts to win
+                if self.character then self.character:react("win") end
+            elseif winAmount > 0 then
+                -- Small win
+                if self.character then self.character:react("coin") end
             end
         end
     end

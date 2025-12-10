@@ -2,11 +2,15 @@
 local Game = require("src.game")
 local i18n = require("src.i18n")
 local Effects = require("src.effects")
+local ModAPI = require("src.core.mod_api")
 
 function love.load()
     math.randomseed(os.time())
     -- Set a nice background color (dark blue-ish)
     love.graphics.setBackgroundColor(0.08, 0.08, 0.12)
+    
+    -- Debug flag for character (press F1 to toggle)
+    _G.DEBUG_CHARACTER = false
     
     -- Initialize effects system
     Effects.init()
@@ -61,6 +65,9 @@ function love.load()
     
     -- Set default
     love.graphics.setFont(_G.Fonts.normal)
+    
+    -- Load mods
+    ModAPI.loadMods()
 
     Game:init()
 end
@@ -74,6 +81,11 @@ function love.draw()
 end
 
 function love.keypressed(key)
+    -- F1 toggles character debug
+    if key == "f1" then
+        _G.DEBUG_CHARACTER = not _G.DEBUG_CHARACTER
+        print("Character debug: " .. tostring(_G.DEBUG_CHARACTER))
+    end
     Game:keypressed(key)
 end
 

@@ -2,15 +2,275 @@
 
 ## 概述
 
-LuckClone 采用数据驱动设计，可以通过修改数据文件或添加新文件来扩展游戏内容。
+LuckyReels 提供完整的 Mod API，允许玩家：
+- 添加/修改符号、事件、协同效果
+- 修改游戏数值和平衡
+- 创建自定义动态角色
+- 添加多语言翻译
 
 ---
 
-## 添加新符号
+## 快速开始
 
-### 1. 基础符号
+### 创建 Mod
 
-在 `data/symbols_base.lua` 中添加：
+1. 在 `mods/` 目录创建文件 `my_mod.lua` 或文件夹 `my_mod/init.lua`
+2. 使用 ModAPI 注册你的 mod：
+
+```lua
+return function(ModAPI)
+    ModAPI.register({
+        id = "my_mod",
+        name = "My Awesome Mod",
+        version = "1.0.0",
+        author = "YourName",
+        description = "Does cool stuff",
+    })
+    
+    -- 你的 mod 代码...
+end
+```
+
+---
+
+## API 参考
+
+### 符号 API (ModAPI.Symbols)
+
+#### 添加新符号
+```lua
+ModAPI.Symbols.add({
+    key = "my_symbol",
+    char = "★",              -- 显示字符
+    color = {1, 0.9, 0.3},   -- RGB颜色
+    base_value = 5,
+    rarity = 2,  -- 1=普通, 2=稀有, 3=史诗
+    tags = {"lucky", "gem"},
+})
+
+-- 添加翻译
+ModAPI.i18n.add("en", "symbol_my_symbol_name", "My Symbol")
+ModAPI.i18n.add("en", "symbol_my_symbol_desc", "+5 coins")
+ModAPI.i18n.add("zh", "symbol_my_symbol_name", "我的符号")
+ModAPI.i18n.add("zh", "symbol_my_symbol_desc", "+5金币")
+```
+
+#### 修改现有符号
+```lua
+ModAPI.Symbols.modify("coin", {
+    base_value = 3,  -- 金币价值改为3
+})
+```
+
+### 事件 API (ModAPI.Events)
+
+#### 添加新事件
+```lua
+ModAPI.Events.add({
+    id = "jackpot",
+    name = "Jackpot!",
+    desc = "Win big!",
+    weight = 5,  -- 权重越高越常见
+    type = "positive",  -- positive/negative/neutral
+    
+    apply = function(engine)
+        engine.money = engine.money + 50
+        return "Won 50 coins!"
+    end,
+})
+```
+
+#### 修改事件权重
+```lua
+ModAPI.Events.setWeight("tax", 0)  -- 禁用税收事件
+```
+
+### 协同 API (ModAPI.Synergies)
+
+#### 添加新分类
+```lua
+ModAPI.Synergies.addCategory("magic", {"witch", "diamond", "lucky_seven"})
+```
+
+#### 添加协同加成
+```lua
+ModAPI.Synergies.addBonus("magic", 3, 2.0, "synergy_magic_power")
+-- 3个魔法符号 = 2倍加成
+```
+
+#### 添加组合
+```lua
+ModAPI.Synergies.addCombo("triple_diamond", {
+    symbols = {"diamond", "diamond", "diamond"},
+    multiplier = 5,
+    name_key = "combo_triple_diamond",
+})
+```
+
+### 配置 API (ModAPI.Config)
+
+```lua
+-- 修改平衡
+ModAPI.Config.setBalance("starting_money", 20)
+ModAPI.Config.setBalance("starting_rent", 10)
+
+-- 修改难度
+ModAPI.Config.setDifficulty("events", {
+    base_chance = 0.1,
+    max_chance = 0.5,
+})
+
+-- 修改商店
+ModAPI.Config.setShop("reroll_cost", 3)
+```
+
+### 翻译 API (ModAPI.i18n)
+
+```lua
+-- 添加翻译
+ModAPI.i18n.add("en", "symbol_my_symbol_name", "My Symbol")
+ModAPI.i18n.add("zh", "symbol_my_symbol_name", "我的符号")
+
+-- 批量添加
+ModAPI.i18n.addTranslations("en", {
+    my_key1 = "Value 1",
+    my_key2 = "Value 2",
+})
+```
+
+### 钩子 API (ModAPI.Hooks)
+
+```lua
+-- 监听游戏事件
+ModAPI.Hooks.on("game:spin", function()
+    print("Player spinning!")
+end)
+
+ModAPI.Hooks.on("game:score", function(score, symbols)
+    print("Scored: " .. score)
+end)
+
+ModAPI.Hooks.on("game:floor", function(oldFloor, newFloor)
+    print("Advanced to floor " .. newFloor)
+end)
+```
+
+---
+
+## 自定义角色
+
+### 创建角色
+
+```lua
+local MyChar = {}
+MyChar.__index = MyChar
+
+function MyChar.new()
+    local self = setmetatable({}, MyChar)
+    self.x = 80
+    self.y = 500
+    self.time = 0
+    self.expression = "neutral"
+    return self
+end
+
+function MyChar:update(dt)
+    self.time = self.time + dt
+    -- 动画逻辑
+end
+
+function MyChar:draw()
+    -- 绘制角色
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.circle("fill", self.x, self.y, 30)
+end
+
+function MyChar:react(eventType, data)
+    -- 对事件做出反应
+    if eventType == "win" then
+        self.expression = "happy"
+    elseif eventType == "big_win" then
+        self.expression = "excited"
+    end
+end
+
+function MyChar:lookAt(x, y)
+    -- 看向鼠标位置
+end
+
+-- 响应游戏状态变化
+function MyChar:updateFromGameState(gameState)
+    -- gameState 包含:
+    -- money: 当前金币
+    -- rent: 当前租金
+    -- floor: 当前楼层
+    -- state: 游戏状态
+    -- inventory: 背包符号列表
+    -- spins_left: 剩余旋转次数
+    
+    local ratio = gameState.money / gameState.rent
+    if ratio < 0.5 then
+        self.mood = "worried"
+    elseif ratio >= 2 then
+        self.mood = "confident"
+    end
+    
+    -- 检查特定道具
+    for _, sym in ipairs(gameState.inventory) do
+        if sym.key == "diamond" then
+            self.hasDiamond = true
+        end
+    end
+end
+
+-- 注册角色
+ModAPI.Character.register({
+    id = "my_char",
+    name = "My Character",
+    new = MyChar.new,
+    update = MyChar.update,
+    draw = MyChar.draw,
+    react = MyChar.react,
+    lookAt = MyChar.lookAt,
+})
+
+-- 激活角色
+ModAPI.Character.setActive("my_char")
+```
+
+### 角色可访问的游戏数据
+
+| 字段 | 类型 | 描述 |
+|------|------|------|
+| `money` | number | 当前金币 |
+| `rent` | number | 当前租金 |
+| `floor` | number | 当前楼层 |
+| `state` | string | 游戏状态 (IDLE/SPINNING/等) |
+| `inventory` | table | 背包符号列表 |
+| `spins_left` | number | 剩余旋转次数 |
+
+### 角色事件类型
+
+| 事件 | 描述 |
+|------|------|
+| `spin` | 开始旋转 |
+| `coin` | 获得少量金币 |
+| `win` | 获得中等金币 |
+| `big_win` | 获得大量金币 |
+| `event` | 随机事件触发 |
+| `lose` | 输掉 |
+
+---
+
+## 示例 Mod
+
+查看 `mods/example_mod.lua` 和 `mods/custom_character/` 获取完整示例。
+
+---
+
+## 旧版数据文件方式
+
+### 添加符号 (data/symbols_base.lua)
 
 ```lua
 my_symbol = {
