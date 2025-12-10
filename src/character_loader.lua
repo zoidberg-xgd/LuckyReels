@@ -6,6 +6,7 @@
 -- 4. Procedural (code-drawn, current default)
 
 local CharacterLoader = {}
+local ModScripting = require("src.core.mod_scripting")
 
 --------------------------------------------------------------------------------
 -- Format Detection
@@ -225,30 +226,234 @@ end
 function PartsCharacter:update(dt)
     self.time = self.time + dt
     
+    -- Smooth parameter transitions
+    self.smoothParams = self.smoothParams or {}
+    for param, target in pairs(self.parameters) do
+        self.smoothParams[param] = self.smoothParams[param] or target
+        self.smoothParams[param] = self.smoothParams[param] + (target - self.smoothParams[param]) * dt * 3
+    end
+    
     -- Apply parameter bindings to parts
     for name, part in pairs(self.parts) do
+        local baseDef = self.partsDef.parts[name] or {}
+        
+        -- Reset to base values
+        part.scaleX = baseDef.scaleX or 1
+        part.scaleY = baseDef.scaleY or 1
+        part.rotation = baseDef.rotation or 0
+        part.x = baseDef.x or 0
+        part.y = baseDef.y or 0
+        
+        -- Apply bindings
         for param, binding in pairs(part.bindings) do
-            local value = self.parameters[param] or 0
+            local value = self.smoothParams[param] or 0
             
             if binding.scaleX then
-                part.scaleX = 1 + value * binding.scaleX
+                part.scaleX = part.scaleX + value * binding.scaleX
             end
             if binding.scaleY then
-                part.scaleY = 1 + value * binding.scaleY
+                part.scaleY = part.scaleY + value * binding.scaleY
             end
             if binding.rotation then
-                part.rotation = value * binding.rotation
+                part.rotation = part.rotation + value * binding.rotation
+            end
+            if binding.x then
+                part.x = part.x + value * binding.x
             end
             if binding.y then
-                part.y = (self.partsDef.parts[name].y or 0) + value * binding.y
+                part.y = part.y + value * binding.y
             end
         end
     end
     
-    -- Idle animation
-    local breathOffset = math.sin(self.time * 2) * 2
-    if self.parts.body then
-        self.parts.body.y = (self.partsDef.parts.body.y or 0) + breathOffset
+    -- Apply dynamic animations
+    self:applyAnimations(dt)
+    
+    -- Update expression images
+    self:updateExpression()
+end
+
+--------------------------------------------------------------------------------
+-- Dynamic Animations
+--------------------------------------------------------------------------------
+
+function PartsCharacter:applyAnimations(dt)
+    local t = self.time
+    local anims = self.partsDef.animations or {}
+    
+    -- Helper to get animation config with defaults
+    local function getAnim(name, defaults)
+        local cfg = anims[name] or {}
+        local result = {}
+        for k, v in pairs(defaults) do
+            result[k] = cfg[k] ~= nil and cfg[k] or v
+        end
+        return result
+    end
+    
+    -- 1. Breathing animation (身体呼吸)
+    local breathing = getAnim("breathing", {enabled = true, speed = 2, amount = 2, scale = 0.01})
+    if breathing.enabled then
+        local breath = math.sin(t * breathing.speed) * breathing.amount
+        if self.parts.body then
+            self.parts.body.y = self.parts.body.y + breath
+            self.parts.body.scaleY = self.parts.body.scaleY + math.sin(t * breathing.speed) * breathing.scale
+        end
+        if self.parts.clothes then
+            self.parts.clothes.y = self.parts.clothes.y + breath * 0.8
+        end
+    end
+    
+    -- 2. Hair sway animation (头发飘动)
+    local hairSway = getAnim("hair_sway", {enabled = true, speed = 1.5, amount = 0.03})
+    if hairSway.enabled then
+        local sway = math.sin(t * hairSway.speed) * hairSway.amount
+        local swayFast = math.sin(t * hairSway.speed * 2) * hairSway.amount * 0.3
+        if self.parts.front_hair then
+            self.parts.front_hair.rotation = sway + swayFast
+        end
+        if self.parts.back_hair then
+            self.parts.back_hair.rotation = sway * 0.5
+            self.parts.back_hair.scaleX = 1 + math.sin(t * hairSway.speed * 1.3) * 0.02
+        end
+    end
+    
+    -- 3. Idle sway (身体轻微摇摆)
+    local idleSway = getAnim("idle_sway", {enabled = true, speed = 0.8, amount = 0.5})
+    if idleSway.enabled then
+        local sway = math.sin(t * idleSway.speed) * idleSway.amount
+        if self.parts.body then
+            self.parts.body.x = self.parts.body.x + sway
+        end
+        if self.parts.head then
+            self.parts.head.x = self.parts.head.x + sway * 0.8
+            self.parts.head.rotation = self.parts.head.rotation + math.sin(t * idleSway.speed * 0.75) * 0.02
+        end
+    end
+    
+    -- 4. Blinking animation (眨眼)
+    local blinking = getAnim("blinking", {enabled = true, min_interval = 3, max_interval = 6, speed = 8})
+    if blinking.enabled then
+        self.blinkTimer = self.blinkTimer or (blinking.min_interval + math.random() * (blinking.max_interval - blinking.min_interval))
+        self.blinkTimer = self.blinkTimer - dt
+        if self.blinkTimer <= 0 then
+            self.isBlinking = true
+            self.blinkProgress = 0
+            self.blinkTimer = blinking.min_interval + math.random() * (blinking.max_interval - blinking.min_interval)
+        end
+        
+        if self.isBlinking then
+            self.blinkProgress = self.blinkProgress + dt * blinking.speed
+            if self.blinkProgress >= 1 then
+                self.isBlinking = false
+            end
+            if self.parts.eyes then
+                local blinkScale = 1
+                if self.blinkProgress < 0.5 then
+                    blinkScale = 1 - self.blinkProgress * 2
+                else
+                    blinkScale = (self.blinkProgress - 0.5) * 2
+                end
+                self.parts.eyes.scaleY = self.parts.eyes.scaleY * math.max(0.1, blinkScale)
+            end
+        end
+    end
+    
+    -- 5. Arm idle animation (手臂轻微摆动)
+    local armSwing = getAnim("arm_swing", {enabled = true, speed = 1.2, amount = 0.05})
+    if armSwing.enabled then
+        local swing = math.sin(t * armSwing.speed) * armSwing.amount
+        if self.parts.arm_left then
+            self.parts.arm_left.rotation = self.parts.arm_left.rotation + swing
+        end
+        if self.parts.arm_right then
+            self.parts.arm_right.rotation = self.parts.arm_right.rotation - swing
+        end
+    end
+    
+    -- 6. Expression-based animations
+    if self.expression == "happy" then
+        local bounce = math.abs(math.sin(t * 4)) * 3
+        if self.parts.body then self.parts.body.y = self.parts.body.y - bounce end
+        if self.parts.head then self.parts.head.y = self.parts.head.y - bounce * 1.2 end
+    elseif self.expression == "worried" then
+        local shake = math.sin(t * 8) * 1
+        if self.parts.body then self.parts.body.x = self.parts.body.x + shake end
+    end
+    
+    -- 7. Reaction animations (临时动画)
+    if self.reactionTimer and self.reactionTimer > 0 then
+        self.reactionTimer = self.reactionTimer - dt
+        local intensity = self.reactionTimer / self.reactionDuration
+        
+        if self.reactionType == "jump" then
+            local jump = math.sin(self.reactionTimer * 10) * 10 * intensity
+            if self.parts.body then self.parts.body.y = self.parts.body.y - jump end
+            if self.parts.head then self.parts.head.y = self.parts.head.y - jump end
+        elseif self.reactionType == "shake" then
+            local shake = math.sin(self.reactionTimer * 20) * 5 * intensity
+            if self.parts.body then self.parts.body.x = self.parts.body.x + shake end
+        elseif self.reactionType == "nod" then
+            local nod = math.sin(self.reactionTimer * 8) * 0.1 * intensity
+            if self.parts.head then self.parts.head.rotation = self.parts.head.rotation + nod end
+        elseif self.reactionType == "bounce" then
+            local bounce = math.abs(math.sin(self.reactionTimer * 15)) * 8 * intensity
+            if self.parts.body then self.parts.body.y = self.parts.body.y - bounce end
+        elseif self.reactionType == "spin" then
+            local spin = self.reactionTimer * 10 * intensity
+            if self.parts.body then self.parts.body.rotation = spin end
+        end
+    end
+    
+    -- 8. Custom script animations
+    self:applyScriptAnimations(dt)
+    
+    -- 9. Run mod update hooks
+    ModScripting.runUpdates(self, dt, self.gameState)
+end
+
+-- Apply custom animations registered via ModScripting
+function PartsCharacter:applyScriptAnimations(dt)
+    local customAnims = self.partsDef.custom_animations or {}
+    
+    for partName, animList in pairs(customAnims) do
+        local part = self.parts[partName]
+        if part then
+            for _, animDef in ipairs(animList) do
+                local animFunc = ModScripting.getAnimation(animDef.name)
+                if animFunc then
+                    local ok, err = pcall(animFunc, part, self.time, animDef.intensity or 1)
+                    if not ok then
+                        print("[Character] Animation error: " .. tostring(err))
+                    end
+                end
+            end
+        end
+    end
+end
+
+function PartsCharacter:updateExpression()
+    if not self.partsDef.expressions then return end
+    
+    local exprDef = self.partsDef.expressions[self.expression]
+    if not exprDef then return end
+    
+    -- Swap eye image
+    if exprDef.eyes and self.parts.eyes then
+        local imgPath = self.path .. "/" .. exprDef.eyes
+        if love.filesystem.getInfo(imgPath) and self.parts.eyes.currentImage ~= exprDef.eyes then
+            self.parts.eyes.image = love.graphics.newImage(imgPath)
+            self.parts.eyes.currentImage = exprDef.eyes
+        end
+    end
+    
+    -- Swap mouth image
+    if exprDef.mouth and self.parts.mouth then
+        local imgPath = self.path .. "/" .. exprDef.mouth
+        if love.filesystem.getInfo(imgPath) and self.parts.mouth.currentImage ~= exprDef.mouth then
+            self.parts.mouth.image = love.graphics.newImage(imgPath)
+            self.parts.mouth.currentImage = exprDef.mouth
+        end
     end
 end
 
@@ -294,11 +499,49 @@ function PartsCharacter:draw()
 end
 
 function PartsCharacter:react(eventType, data)
-    if eventType == "win" or eventType == "big_win" then
-        self.expression = "happy"
-    elseif eventType == "spin" then
-        self.expression = "excited"
+    -- Trigger script reactions first
+    ModScripting.triggerReactions(eventType, self, data)
+    
+    -- Check for custom reaction config
+    local reactions = self.partsDef.reactions or {}
+    local reaction = reactions[eventType]
+    
+    if reaction then
+        -- Use config from parts.lua
+        if reaction.expression then
+            self.expression = reaction.expression
+        end
+        if reaction.animation then
+            self:triggerReaction(reaction.animation, reaction.duration or 0.5)
+        end
+        -- Run custom script if defined
+        if reaction.script then
+            local scriptFunc = ModScripting.getAnimation(reaction.script)
+            if scriptFunc then
+                pcall(scriptFunc, self, data)
+            end
+        end
+    else
+        -- Default reactions
+        if eventType == "win" then
+            self.expression = "happy"
+            self:triggerReaction("jump", 0.5)
+        elseif eventType == "big_win" then
+            self.expression = "happy"
+            self:triggerReaction("jump", 1.0)
+        elseif eventType == "spin" then
+            self:triggerReaction("nod", 0.3)
+        elseif eventType == "lose" then
+            self.expression = "worried"
+            self:triggerReaction("shake", 0.5)
+        end
     end
+end
+
+function PartsCharacter:triggerReaction(reactionType, duration)
+    self.reactionType = reactionType
+    self.reactionTimer = duration
+    self.reactionDuration = duration
 end
 
 function PartsCharacter:lookAt(x, y) end
@@ -310,10 +553,50 @@ function PartsCharacter:updateFromGameState(gameState)
     local rent = gameState.rent or 15
     local floor = gameState.floor or 1
     
-    -- Map to parameters
-    self:setParameter("belly", money / 50)
-    self:setParameter("tired", floor / 20)
-    self:setParameter("happy", (money / rent) - 1)
+    -- Use parameter mapping if defined
+    if self.partsDef and self.partsDef.parameter_mapping then
+        for paramName, mapping in pairs(self.partsDef.parameter_mapping) do
+            local sourceValue = 0
+            
+            if mapping.source == "money" then
+                sourceValue = money
+            elseif mapping.source == "floor" then
+                sourceValue = floor
+            elseif mapping.source == "rent_ratio" then
+                sourceValue = money / rent
+            end
+            
+            -- Map value to output range
+            local minIn = mapping.min_value or 0
+            local maxIn = mapping.max_value or 100
+            local minOut = mapping.min_output or 0
+            local maxOut = mapping.max_output or 1
+            
+            local t = (sourceValue - minIn) / (maxIn - minIn)
+            t = math.max(0, math.min(1, t))  -- Clamp to 0-1
+            local output = minOut + t * (maxOut - minOut)
+            
+            self:setParameter(paramName, output)
+        end
+    else
+        -- Default mapping
+        self:setParameter("belly_size", math.min(1, money / 100))
+        self:setParameter("tired", math.min(1, floor / 20))
+        self:setParameter("happy", math.max(0, (money / rent) - 1))
+    end
+    
+    -- Update expression based on game state
+    local rentRatio = rent > 0 and (money / rent) or 1
+    
+    if rentRatio < 0.5 then
+        self.expression = "worried"
+    elseif rentRatio >= 2 then
+        self.expression = "happy"
+    elseif rentRatio >= 1.2 then
+        self.expression = "surprised"  -- Pleasantly surprised
+    else
+        self.expression = "neutral"
+    end
 end
 
 --------------------------------------------------------------------------------

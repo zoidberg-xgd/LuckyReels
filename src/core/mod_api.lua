@@ -469,8 +469,35 @@ end
 -- Mod Loader
 --------------------------------------------------------------------------------
 
+-- External mod directory (user's save directory)
+ModAPI.externalModDir = nil
+
+function ModAPI.setupExternalMods()
+    -- LÖVE's save directory is writable and persists after game is packaged
+    -- On Windows: %APPDATA%/LOVE/gamename/
+    -- On macOS: ~/Library/Application Support/LOVE/gamename/
+    -- On Linux: ~/.local/share/love/gamename/
+    
+    if love and love.filesystem then
+        -- Create mods directory in save folder if it doesn't exist
+        local saveDir = love.filesystem.getSaveDirectory()
+        ModAPI.externalModDir = saveDir
+        
+        -- Ensure mods folder exists
+        if not love.filesystem.getInfo("mods") then
+            love.filesystem.createDirectory("mods")
+        end
+        
+        print("[Mod] External mod directory: " .. saveDir .. "/mods")
+        print("[Mod] Users can add .lua files here to create mods!")
+    end
+end
+
 function ModAPI.loadMods()
-    -- Load mods from mods/ directory
+    -- Setup external mod directory first
+    ModAPI.setupExternalMods()
+    
+    -- Load mods from mods/ directory (both internal and external)
     local modDir = "mods"
     
     -- Check if love.filesystem is available
