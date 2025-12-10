@@ -289,6 +289,18 @@ end
 
 ModAPI.Character = {}
 
+-- Load character from file (Spine, Parts, Spritesheet)
+function ModAPI.Character.loadFromFile(path)
+    local CharacterLoader = require("src.character_loader")
+    local char = CharacterLoader.load(path)
+    
+    if char then
+        print("[Mod] Loaded character from: " .. path)
+        return char
+    end
+    return nil
+end
+
 -- Register a custom character
 function ModAPI.Character.register(charDef)
     if not charDef.id then

@@ -262,6 +262,95 @@ ModAPI.Character.setActive("my_char")
 
 ---
 
+## 外部角色文件
+
+支持从文件加载角色，支持以下格式：
+
+### Spine 动画
+```
+assets/characters/my_char/
+├── skeleton.json    # Spine 骨骼数据
+├── skeleton.atlas   # 纹理图集
+└── *.png           # 纹理图片
+```
+
+```lua
+-- 在 mod 中加载
+local char = ModAPI.Character.loadFromFile("assets/characters/my_char")
+ModAPI.Character.setActive(char)
+```
+
+### PNG 部件
+```
+assets/characters/my_char/
+├── parts.lua       # 部件定义
+├── body.png        # 身体
+├── head.png        # 头部
+├── eyes_normal.png # 眼睛
+└── ...
+```
+
+**parts.lua 示例：**
+```lua
+return {
+    parts = {
+        body = {
+            image = "body.png",
+            x = 0, y = 0,
+            ox = 50, oy = 75,  -- 原点
+            z = 1,             -- 绘制顺序
+            
+            -- 参数绑定：游戏数据影响外观
+            bindings = {
+                belly = {
+                    scaleX = 0.3,  -- 金币越多，肚子越大
+                    scaleY = 0.2,
+                },
+            },
+        },
+        head = {
+            image = "head.png",
+            x = 0, y = -60,
+            z = 2,
+        },
+    },
+}
+```
+
+### Spritesheet 帧动画
+```
+assets/characters/my_char/
+├── spritesheet.png  # 精灵图
+└── spritesheet.lua  # 动画定义
+```
+
+**spritesheet.lua 示例：**
+```lua
+return {
+    frameWidth = 64,
+    frameHeight = 64,
+    frameDuration = 0.1,
+    
+    animations = {
+        idle = {1, 2, 3, 4, 3, 2},
+        happy = {5, 6, 7, 8},
+        worried = {9, 10, 11, 10},
+    },
+}
+```
+
+### 参数绑定
+
+角色可以响应游戏数据：
+
+| 参数 | 来源 | 示例效果 |
+|------|------|----------|
+| `belly` | money / 50 | 肚子变大 |
+| `tired` | floor / 20 | 疲劳表情 |
+| `happy` | money/rent - 1 | 开心程度 |
+
+---
+
 ## 示例 Mod
 
 查看 `mods/example_mod.lua` 和 `mods/custom_character/` 获取完整示例。
