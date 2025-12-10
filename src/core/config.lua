@@ -11,7 +11,7 @@ local Config = {}
 Config.screen = {
     width = 1024,
     height = 768,
-    title = "LuckyReels - 幸运转轴",
+    title = "LuckyReels",
 }
 
 --------------------------------------------------------------------------------
@@ -131,11 +131,11 @@ Config.difficulty = {
     -- Checkpoints
     checkpoints = {3, 7},
     
-    -- Random events
+    -- Random events (lowered chance)
     events = {
-        base_chance = 0.2,
-        chance_per_floor = 0.05,
-        max_chance = 0.7,
+        base_chance = 0.08,        -- 8% base chance (was 20%)
+        chance_per_floor = 0.02,   -- +2% per floor (was 5%)
+        max_chance = 0.35,         -- Max 35% (was 70%)
     },
 }
 

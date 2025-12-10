@@ -20,12 +20,12 @@ Floor.CONFIG = {
     spins_base = 5,
     spins_bonus_every = 3,  -- Extra spin every N floors
     
-    -- Floor milestones
+    -- Floor milestones (use i18n keys for messages)
     milestones = {
-        [5] = {type = "relic", message = "第5层奖励: 获得遗物!"},
-        [10] = {type = "essence", amount = 5, message = "第10层奖励: 获得5精华!"},
-        [15] = {type = "relic", message = "第15层奖励: 获得遗物!"},
-        [20] = {type = "victory", message = "恭喜通关!"},
+        [5] = {type = "relic", message_key = "milestone_floor5"},
+        [10] = {type = "essence", amount = 5, message_key = "milestone_floor10"},
+        [15] = {type = "relic", message_key = "milestone_floor15"},
+        [20] = {type = "victory", message_key = "milestone_floor20"},
     },
     
     -- Difficulty scaling

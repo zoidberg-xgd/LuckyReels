@@ -74,119 +74,76 @@ end
 -- Random Events
 --------------------------------------------------------------------------------
 
-Difficulty.events = {
-    -- Positive events
-    {
-        id = "discount",
-        name = "商店特价",
-        desc = "本次商店所有物品半价!",
-        weight = 15,
-        type = "positive",
-        apply = function(engine)
-            engine.shop_discount = 0.5
+-- Load events from data file
+local i18n = require("src.i18n")
+local eventData = require("data.events")
+
+-- Effect handlers
+local effectHandlers = {
+    add_random_symbol = function(engine, value)
+        local Registry = require("src.core.registry")
+        local key = Registry.getRandomSymbolKey()
+        local sym = Registry.createSymbol(key)
+        table.insert(engine.inventory, sym)
+        return sym.name
+    end,
+    add_spin = function(engine, value)
+        engine.spins_left = engine.spins_left + (value or 1)
+    end,
+    remove_spin = function(engine, value)
+        if engine.spins_left > 1 then
+            engine.spins_left = engine.spins_left - (value or 1)
         end
-    },
-    {
-        id = "free_symbol",
-        name = "意外收获",
-        desc = "获得一个免费符号!",
-        weight = 10,
-        type = "positive",
-        apply = function(engine)
-            local Registry = require("src.core.registry")
-            local key = Registry.getRandomSymbolKey()
-            local sym = Registry.createSymbol(key)
-            table.insert(engine.inventory, sym)
-            return sym.name
+    end,
+    add_money = function(engine, value)
+        engine.money = engine.money + (value or 0)
+    end,
+    remove_money = function(engine, value)
+        engine.money = math.max(0, engine.money - (value or 0))
+    end,
+    multiply_rent = function(engine, value)
+        engine.rent = math.floor(engine.rent * (value or 1))
+    end,
+    shuffle_inventory = function(engine, value)
+        for i = #engine.inventory, 2, -1 do
+            local j = math.random(i)
+            engine.inventory[i], engine.inventory[j] = engine.inventory[j], engine.inventory[i]
         end
-    },
-    {
-        id = "extra_spin",
-        name = "额外机会",
-        desc = "本轮多一次旋转!",
-        weight = 12,
-        type = "positive",
-        apply = function(engine)
-            engine.spins_left = engine.spins_left + 1
-        end
-    },
-    {
-        id = "rent_reduction",
-        name = "房东心情好",
-        desc = "本次房租减少20%!",
-        weight = 8,
-        type = "positive",
-        apply = function(engine)
-            engine.rent = math.floor(engine.rent * 0.8)
-        end
-    },
-    {
-        id = "bonus_coins",
-        name = "路边捡钱",
-        desc = "获得5金币!",
-        weight = 15,
-        type = "positive",
-        apply = function(engine)
-            engine.money = engine.money + 5
-        end
-    },
-    
-    -- Negative events
-    {
-        id = "rent_increase",
-        name = "房东涨价",
-        desc = "本次房租增加15%!",
-        weight = 10,
-        type = "negative",
-        apply = function(engine)
-            engine.rent = math.floor(engine.rent * 1.15)
-        end
-    },
-    {
-        id = "lose_spin",
-        name = "睡过头了",
-        desc = "本轮少一次旋转!",
-        weight = 8,
-        type = "negative",
-        apply = function(engine)
-            if engine.spins_left > 1 then
-                engine.spins_left = engine.spins_left - 1
-            end
-        end
-    },
-    {
-        id = "tax",
-        name = "意外税收",
-        desc = "失去3金币!",
-        weight = 10,
-        type = "negative",
-        apply = function(engine)
-            engine.money = math.max(0, engine.money - 3)
-        end
-    },
-    
-    -- Neutral events
-    {
-        id = "shuffle",
-        name = "命运之轮",
-        desc = "所有符号随机重排!",
-        weight = 5,
-        type = "neutral",
-        apply = function(engine)
-            -- Shuffle inventory
-            for i = #engine.inventory, 2, -1 do
-                local j = math.random(i)
-                engine.inventory[i], engine.inventory[j] = engine.inventory[j], engine.inventory[i]
-            end
-        end
-    },
+    end,
+    shop_discount = function(engine, value)
+        engine.shop_discount = value or 0.5
+    end,
 }
+
+-- Build events with localized names and apply functions
+Difficulty.events = {}
+for _, data in ipairs(eventData) do
+    local event = {
+        id = data.id,
+        name = i18n.t(data.name_key) or data.name_key,
+        desc = i18n.t(data.desc_key) or data.desc_key,
+        weight = data.weight,
+        type = data.type,
+        apply = function(engine)
+            local handler = effectHandlers[data.effect]
+            if handler then
+                return handler(engine, data.value)
+            end
+        end
+    }
+    table.insert(Difficulty.events, event)
+end
+
+print("[Events] Loaded " .. #Difficulty.events .. " events")
 
 -- Roll for a random event (chance based on floor)
 function Difficulty.rollEvent(floor)
-    -- Event chance increases with floor
-    local eventChance = 0.2 + floor * 0.05  -- 25% at floor 1, 70% at floor 10
-    eventChance = math.min(eventChance, 0.7)  -- Cap at 70%
+    local Config = require("src.core.config")
+    local eventConfig = Config.difficulty.events
+    
+    -- Event chance increases with floor (use Config values)
+    local eventChance = eventConfig.base_chance + floor * eventConfig.chance_per_floor
+    eventChance = math.min(eventChance, eventConfig.max_chance)
     
     if math.random() > eventChance then
         return nil  -- No event

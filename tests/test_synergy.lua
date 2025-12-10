@@ -109,10 +109,10 @@ T.describe("Synergy Special Combos", function()
         
         local result = Synergy.calculate(grid)
         
-        -- Check if cat_milk combo was detected
+        -- Check if cat_milk combo was detected (check for bonus instead of name)
         local foundCombo = false
         for _, syn in ipairs(result.synergies) do
-            if syn.name == "猫咪套餐" then
+            if syn.type == "combo" and syn.bonus == 5 then
                 foundCombo = true
                 break
             end

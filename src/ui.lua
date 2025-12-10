@@ -166,7 +166,16 @@ function UI.drawGrid(grid, offsetX, offsetY, cellSize, animState)
     love.graphics.rectangle("fill", frameX + 5, frameY + 5, frameW - 10, 8, 6, 6)
     
     -- Track which columns just stopped (for effects)
+    -- Use persistent state to track stop events
+    UI.reelStopStates = UI.reelStopStates or {}
     local justStopped = {}
+    
+    -- Reset states when spin starts (timer near 0)
+    if animState and animState.isSpinning and animState.timer < 0.1 then
+        for c = 1, grid.cols do
+            UI.reelStopStates[c] = true  -- All columns are spinning
+        end
+    end
     
     for c = 1, grid.cols do
         local isSpinning = false
@@ -181,11 +190,17 @@ function UI.drawGrid(grid, offsetX, offsetY, cellSize, animState)
         if animState and animState.isSpinning then
             local delay = animState.delays[c] or 0
             local timer = animState.timer
-            local prevTimer = timer - (1/60)  -- Approximate previous frame
             
-            -- Detect when reel just stopped
-            if prevTimer < delay and timer >= delay then
+            -- Track stop state per column
+            local wasSpinning = UI.reelStopStates[c] or false
+            local nowStopped = timer >= delay
+            
+            -- Detect transition from spinning to stopped
+            if wasSpinning and nowStopped then
                 justStopped[c] = true
+                UI.reelStopStates[c] = false  -- Reset so it only triggers once
+            elseif timer < delay then
+                UI.reelStopStates[c] = true  -- Mark as spinning
             end
             
             if timer < delay then
@@ -810,15 +825,15 @@ function UI.drawDraft(options, gameState)
         
         -- Rent due
         love.graphics.setColor(1, 0.5, 0.5)
-        love.graphics.print("租金: " .. (gameState.rent or 0), 200, infoY)
+        love.graphics.print(i18n.t("ui_rent_label") .. ": " .. (gameState.rent or 0), 200, infoY)
         
         -- Spins left
         love.graphics.setColor(0.5, 1, 0.5)
-        love.graphics.print("剩余: " .. (gameState.spins_left or 0) .. " 转", 350, infoY)
+        love.graphics.print((gameState.spins_left or 0) .. " " .. i18n.t("ui_spins_unit"), 350, infoY)
         
         -- Inventory count
         love.graphics.setColor(0.7, 0.7, 1)
-        love.graphics.print("库存: " .. (gameState.inventory_count or 0), 500, infoY)
+        love.graphics.print(i18n.t("ui_inventory") .. ": " .. (gameState.inventory_count or 0), 500, infoY)
         
         -- Progress indicator
         local progress = 0
@@ -1138,7 +1153,7 @@ function UI.drawInventoryButton(inventory, x, y)
     -- Button text
     love.graphics.setColor(0.8, 0.8, 0.9)
     love.graphics.setFont(_G.Fonts.small)
-    love.graphics.printf("背包(" .. #inventory .. ")", x, y + 10, btnW, "center")
+    love.graphics.printf(i18n.t("ui_inventory") .. "(" .. #inventory .. ")", x, y + 10, btnW, "center")
     
     -- Register click zone
     UI.registerZone("INVENTORY_BTN", x, y, btnW, btnH)
@@ -1653,7 +1668,7 @@ function UI.drawEvent(event)
     -- Result if any
     if event.result then
         love.graphics.setColor(1, 0.9, 0.4)
-        love.graphics.printf("获得: " .. event.result, panelX, panelY + 130, panelW, "center")
+        love.graphics.printf(i18n.t("event_got") .. ": " .. event.result, panelX, panelY + 130, panelW, "center")
     end
     
     -- Continue button

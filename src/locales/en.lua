@@ -121,6 +121,7 @@ return {
     ui_upgrade = "Upgrade",
     ui_destroy = "Destroy",
     ui_your_symbols = "Your Symbols",
+    ui_inventory = "Bag",
     ui_inventory_full = "Inventory Full",
     ui_floor_complete = "Floor %d Complete!",
     ui_next_floor = "Enter Floor %d",
@@ -153,4 +154,32 @@ return {
     combo_garden = "Perfect Garden",
     combo_triple_seven = "Triple Seven",
     combo_coin_rush = "Coin Rush",
+    
+    -- ========== MILESTONES ==========
+    milestone_floor5 = "Floor 5 Reward: Get a Relic!",
+    milestone_floor10 = "Floor 10 Reward: Get 5 Essence!",
+    milestone_floor15 = "Floor 15 Reward: Get a Relic!",
+    milestone_floor20 = "Congratulations! You Win!",
+    
+    -- ========== UI EXTRA ==========
+    ui_rent_label = "Rent",
+    
+    -- ========== EVENTS ==========
+    event_got = "Got",
+    event_free_symbol_name = "Lucky Find",
+    event_free_symbol_desc = "Get a free symbol!",
+    event_extra_spin_name = "Extra Chance",
+    event_extra_spin_desc = "One more spin this round!",
+    event_rent_reduction_name = "Kind Landlord",
+    event_rent_reduction_desc = "Rent reduced by 20%!",
+    event_bonus_coins_name = "Found Money",
+    event_bonus_coins_desc = "Get 5 coins!",
+    event_rent_increase_name = "Rent Hike",
+    event_rent_increase_desc = "Rent increased by 15%!",
+    event_lose_spin_name = "Overslept",
+    event_lose_spin_desc = "One less spin this round!",
+    event_tax_name = "Surprise Tax",
+    event_tax_desc = "Lose 3 coins!",
+    event_shuffle_name = "Wheel of Fate",
+    event_shuffle_desc = "All symbols shuffled!",
 }

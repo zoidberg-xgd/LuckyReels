@@ -123,6 +123,7 @@ return {
     ui_upgrade = "升级",
     ui_destroy = "销毁",
     ui_your_symbols = "你的符号",
+    ui_inventory = "背包",
     ui_inventory_full = "背包已满",
     ui_floor_complete = "第 %d 层完成!",
     ui_next_floor = "进入第 %d 层",
@@ -155,4 +156,32 @@ return {
     combo_garden = "完美花园",
     combo_triple_seven = "三连七",
     combo_coin_rush = "金币风暴",
+    
+    -- ========== MILESTONES ==========
+    milestone_floor5 = "第5层奖励: 获得遗物!",
+    milestone_floor10 = "第10层奖励: 获得5精华!",
+    milestone_floor15 = "第15层奖励: 获得遗物!",
+    milestone_floor20 = "恭喜通关!",
+    
+    -- ========== UI EXTRA ==========
+    ui_rent_label = "租金",
+    
+    -- ========== EVENTS ==========
+    event_got = "获得",
+    event_free_symbol_name = "意外收获",
+    event_free_symbol_desc = "获得一个免费符号!",
+    event_extra_spin_name = "额外机会",
+    event_extra_spin_desc = "本轮多一次旋转!",
+    event_rent_reduction_name = "房东心情好",
+    event_rent_reduction_desc = "本次房租减少20%!",
+    event_bonus_coins_name = "路边捡钱",
+    event_bonus_coins_desc = "获得5金币!",
+    event_rent_increase_name = "房东涨价",
+    event_rent_increase_desc = "本次房租增加15%!",
+    event_lose_spin_name = "睡过头了",
+    event_lose_spin_desc = "本轮少一次旋转!",
+    event_tax_name = "意外税收",
+    event_tax_desc = "失去3金币!",
+    event_shuffle_name = "命运之轮",
+    event_shuffle_desc = "所有符号随机重排!",
 }
