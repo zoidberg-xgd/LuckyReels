@@ -258,14 +258,14 @@ Config.themes = {
             [3] = {0.15, 0.15, 0.15}, -- Perfected
         },
         
-        -- UI colors - black/white
+        -- UI colors - high contrast for manga
         colors = {
-            money = {0.1, 0.1, 0.1},
-            rent = {0.3, 0.3, 0.3},
-            positive = {0.2, 0.2, 0.2},
-            negative = {0.1, 0.1, 0.1},
-            neutral = {0.4, 0.4, 0.4},
-            text = {0.1, 0.1, 0.1},
+            money = {0.8, 0.6, 0.1},      -- Dark gold
+            rent = {0.7, 0.2, 0.2},       -- Dark red
+            positive = {0.2, 0.5, 0.2},   -- Dark green
+            negative = {0.6, 0.1, 0.1},   -- Dark red
+            neutral = {0.3, 0.3, 0.5},    -- Dark blue-gray
+            text = {0.15, 0.15, 0.15},    -- Near black
             text_light = {1, 1, 1},
             text_dark = {0.1, 0.1, 0.1},
         },
@@ -279,8 +279,8 @@ Config.themes = {
         
         -- Cell style
         cell = {
-            background = {0.98, 0.98, 0.98},
-            border = {0.15, 0.15, 0.15},
+            background = {0.88, 0.86, 0.84},  -- Light gray, not pure white
+            border = {0.3, 0.3, 0.3},
         },
         
         -- Button style - manga style

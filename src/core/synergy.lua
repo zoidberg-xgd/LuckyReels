@@ -1,70 +1,45 @@
 -- src/core/synergy.lua
 -- Symbol synergy and combo system
 
+local i18n = require("src.i18n")
 local Synergy = {}
 
 --------------------------------------------------------------------------------
--- Synergy Definitions
+-- Load Data from External File
 --------------------------------------------------------------------------------
 
--- Symbol categories for synergies
-Synergy.categories = {
-    fruit = {"cherry", "banana", "apple"},
-    animal = {"cat", "monkey", "rabbit", "bee"},
-    gem = {"coin", "pearl", "diamond"},
-    food = {"milk", "candy", "banana"},
-    nature = {"flower", "sun", "bee"},
-}
+local function loadSynergyData()
+    local data = require("data.synergies")
+    Synergy.categories = data.categories
+    Synergy.bonuses = data.bonuses
+    Synergy.combos = data.combos
+    print("[Synergy] Loaded " .. Synergy.countBonuses() .. " bonuses, " .. Synergy.countCombos() .. " combos")
+end
 
--- Synergy bonuses: {min_count, multiplier, name}
-Synergy.bonuses = {
-    fruit = {
-        {3, 1.5, "水果拼盘"},   -- 3+ fruits: 1.5x
-        {5, 2.0, "水果大餐"},   -- 5+ fruits: 2x
-    },
-    animal = {
-        {3, 1.3, "动物园"},     -- 3+ animals: 1.3x
-        {5, 1.8, "野生王国"},   -- 5+ animals: 1.8x
-    },
-    gem = {
-        {3, 1.4, "宝石收藏"},   -- 3+ gems: 1.4x
-        {5, 2.0, "富甲天下"},   -- 5+ gems: 2x
-    },
-    food = {
-        {3, 1.3, "美食家"},     -- 3+ food: 1.3x
-    },
-    nature = {
-        {3, 1.5, "自然之力"},   -- 3+ nature: 1.5x
-    },
-}
+-- Count helpers
+function Synergy.countBonuses()
+    local count = 0
+    for _, bonuses in pairs(Synergy.bonuses or {}) do
+        count = count + #bonuses
+    end
+    return count
+end
 
--- Special combos: specific symbol combinations
-Synergy.combos = {
-    -- Cat + Milk combo bonus
-    cat_milk = {
-        symbols = {"cat", "milk"},
-        bonus = 5,
-        name = "猫咪套餐",
-    },
-    -- Flower + Sun + Bee
-    garden = {
-        symbols = {"flower", "sun", "bee"},
-        bonus = 10,
-        name = "完美花园",
-    },
-    -- Triple 7
-    lucky_triple = {
-        symbols = {"lucky_seven", "lucky_seven", "lucky_seven"},
-        multiplier = 3,
-        name = "三连七",
-    },
-    -- All coins
-    coin_rush = {
-        symbols = {"coin", "coin", "coin", "coin", "coin"},
-        multiplier = 2,
-        name = "金币风暴",
-    },
-}
+function Synergy.countCombos()
+    local count = 0
+    for _ in pairs(Synergy.combos or {}) do
+        count = count + 1
+    end
+    return count
+end
+
+-- Helper to get localized name
+function Synergy.getName(key)
+    return i18n.t(key) or key
+end
+
+-- Initialize on load
+loadSynergyData()
 
 --------------------------------------------------------------------------------
 -- Core Methods
@@ -113,12 +88,12 @@ function Synergy.calculate(grid)
         local bonuses = Synergy.bonuses[category]
         if bonuses then
             for _, bonus in ipairs(bonuses) do
-                local minCount, mult, name = bonus[1], bonus[2], bonus[3]
+                local minCount, mult, nameKey = bonus[1], bonus[2], bonus[3]
                 if count >= minCount then
                     totalMultiplier = totalMultiplier * mult
                     table.insert(activeSynergies, {
                         type = "category",
-                        name = name,
+                        name = Synergy.getName(nameKey),
                         multiplier = mult,
                         count = count
                     })
@@ -152,7 +127,7 @@ function Synergy.calculate(grid)
             end
             table.insert(activeSynergies, {
                 type = "combo",
-                name = combo.name,
+                name = Synergy.getName(combo.name_key),
                 multiplier = combo.multiplier,
                 bonus = combo.bonus
             })

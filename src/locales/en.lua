@@ -136,5 +136,21 @@ return {
     log_bought = "Bought: %s",
     log_sold = "Sold: %s +%d",
     log_upgraded = "Upgraded: %s",
-    log_floor_advance = "Floor %d!"
+    log_floor_advance = "Floor %d!",
+    
+    -- ========== SYNERGIES ==========
+    synergy_fruit_platter = "Fruit Platter",
+    synergy_fruit_feast = "Fruit Feast",
+    synergy_zoo = "Zoo",
+    synergy_wild_kingdom = "Wild Kingdom",
+    synergy_gem_collection = "Gem Collection",
+    synergy_treasure = "Treasure",
+    synergy_gourmet = "Gourmet",
+    synergy_nature_power = "Nature Power",
+    
+    -- ========== COMBOS ==========
+    combo_cat_milk = "Cat Meal",
+    combo_garden = "Perfect Garden",
+    combo_triple_seven = "Triple Seven",
+    combo_coin_rush = "Coin Rush",
 }

@@ -138,5 +138,21 @@ return {
     log_bought = "购买: %s",
     log_sold = "出售: %s +%d",
     log_upgraded = "升级: %s",
-    log_floor_advance = "进入第 %d 层!"
+    log_floor_advance = "进入第 %d 层!",
+    
+    -- ========== SYNERGIES ==========
+    synergy_fruit_platter = "水果拼盘",
+    synergy_fruit_feast = "水果大餐",
+    synergy_zoo = "动物园",
+    synergy_wild_kingdom = "野生王国",
+    synergy_gem_collection = "宝石收藏",
+    synergy_treasure = "富甲天下",
+    synergy_gourmet = "美食家",
+    synergy_nature_power = "自然之力",
+    
+    -- ========== COMBOS ==========
+    combo_cat_milk = "猫咪套餐",
+    combo_garden = "完美花园",
+    combo_triple_seven = "三连七",
+    combo_coin_rush = "金币风暴",
 }

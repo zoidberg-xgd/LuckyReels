@@ -267,43 +267,36 @@ function UI.drawGrid(grid, offsetX, offsetY, cellSize, animState)
             love.graphics.setScissor(cellX, cellY, cellSize, cellSize)
             
             if isSpinning then
-                local stripCellHeight = cellSize + padding
-                local totalStripHeight = stripCellHeight * 10
-                local scrollOffset = (animState.timer * spinSpeed + c * 300) % totalStripHeight
+                -- Real slot machine style: vertical motion blur
+                -- The faster it spins, the more blur
+                local blurIntensity = math.min(spinSpeed / 2200, 1)
                 
-                local chars = {"🍒", "💎", "7️⃣", "🍀", "⭐", "🎰", "💰", "🔔", "🍋", "🍇"}
+                -- Draw vertical motion blur (like real spinning reel)
+                -- Multiple horizontal bands that move vertically
+                local bandCount = 6
+                local scrollOffset = (animState.timer * spinSpeed * 0.5 + c * 100) % cellSize
                 
-                if _G.Fonts and _G.Fonts.big then
-                    love.graphics.setFont(_G.Fonts.big)
-                end
-                
-                local numToDraw = 3
-                local baseIndex = math.floor(scrollOffset / stripCellHeight)
-                local fractionalOffset = scrollOffset % stripCellHeight
-                
-                local blurLayers = spinPhase == "full_speed" and 4 or 2
-                
-                for blur = 0, blurLayers do
-                    local blurOffset = blur * 15
-                    local alpha = 1 - blur * 0.25
+                for i = -1, bandCount do
+                    local bandY = cellY + (i * cellSize / bandCount) + scrollOffset
+                    local bandH = cellSize / bandCount * 0.6
                     
-                    if spinPhase == "full_speed" then
-                        local pulse = 0.6 + math.sin(animState.timer * 30 + c * 0.5) * 0.4
-                        local hue = (animState.timer * 2 + c * 0.3) % 1
-                        love.graphics.setColor(pulse, pulse * 0.7 + 0.3, 0.3, alpha)
-                    elseif spinPhase == "decelerating" then
-                        love.graphics.setColor(1, 1, 1, alpha)
-                    else
-                        love.graphics.setColor(0.8, 0.8, 0.8, alpha)
-                    end
-                    
-                    for i = -1, numToDraw do
-                        local charIndex = ((baseIndex + i) % #chars) + 1
-                        local char = chars[charIndex]
-                        local drawY = cellY + (i * stripCellHeight) - fractionalOffset + cellSize/2 - 15 - blurOffset
-                        love.graphics.print(char, cellX + cellSize/2 - 15, drawY)
+                    -- Skip if outside cell
+                    if bandY + bandH > cellY and bandY < cellY + cellSize then
+                        -- Clamp to cell bounds
+                        local drawY = math.max(bandY, cellY)
+                        local drawH = math.min(bandY + bandH, cellY + cellSize) - drawY
+                        
+                        -- Alternating light/dark bands for motion blur effect
+                        local brightness = 0.4 + (i % 2) * 0.25
+                        love.graphics.setColor(brightness, brightness, brightness, 0.8 * blurIntensity)
+                        love.graphics.rectangle("fill", cellX + 8, drawY, cellSize - 16, drawH)
                     end
                 end
+                
+                -- Add a slight gradient overlay to simulate depth/curve of reel
+                love.graphics.setColor(0, 0, 0, 0.15 * blurIntensity)
+                love.graphics.rectangle("fill", cellX, cellY, cellSize * 0.15, cellSize)
+                love.graphics.rectangle("fill", cellX + cellSize * 0.85, cellY, cellSize * 0.15, cellSize)
             else
                 local sym = grid.cells[r][c]
                 local drawY = cellY + reelOffsetY
@@ -332,10 +325,7 @@ function UI.drawGrid(grid, offsetX, offsetY, cellSize, animState)
                         goto continue_cell
                     end
                     
-                    -- Glow effect for symbols
-                    if isSlamming then
-                        love.graphics.setColor(1, 1, 0.8, 0.5 * alpha)
-                    end
+                    -- No glow effect in manga theme
                     
                     -- Apply scale and tint for marked symbols
                     if scale ~= 1 then
@@ -371,17 +361,6 @@ function UI.drawGrid(grid, offsetX, offsetY, cellSize, animState)
             end
             
             love.graphics.setScissor()
-            
-            -- Cell border with glow
-            if isSlamming then
-                love.graphics.setLineWidth(4)
-                love.graphics.setColor(1, 0.9, 0.5, 0.9)
-            else
-                love.graphics.setLineWidth(1)
-                love.graphics.setColor(0.4, 0.4, 0.5, 0.8)
-            end
-            love.graphics.rectangle("line", cellX, cellY, cellSize, cellSize, 3, 3)
-            love.graphics.setLineWidth(1)
         end
     end
     
@@ -425,108 +404,107 @@ function UI.drawHUD(money, rent, turns, inventoryCount, isSpinning, floor)
     local displayMoney = Effects.getDisplayedMoney()
     local isPending = Effects.pendingCoins > 0.5
     
-    -- Money row with icon
-    local rowY = hudY + 12
-    local iconX = hudX + 15
-    local textX = hudX + 45
+    -- Manga style: simple black text with clean layout
+    local rowY = hudY + 15
+    local textX = hudX + 20
+    local textColor = Config.visual.colors.text or {0.1, 0.1, 0.1}
     
     -- Get bounce scale from Effects
     local bounceScale = Effects.getHudBounce()
-    local coinPulse = isPending and (1 + math.sin(UI.time * 12) * 0.2) or bounceScale
     
-    -- Money icon (animated coin with bounce)
-    love.graphics.setColor(1 * coinPulse, 0.8 * coinPulse, 0.1)
-    love.graphics.circle("fill", iconX + 8, rowY + 10, 10 * coinPulse)
-    love.graphics.setColor(1, 0.95, 0.4)
-    love.graphics.circle("fill", iconX + 6, rowY + 8, 4)
-    love.graphics.setColor(0.8, 0.6, 0)
+    -- === MONEY ROW ===
+    love.graphics.setFont(_G.Fonts.big)
+    -- Draw coin icon (circle)
+    love.graphics.setColor(0.9, 0.7, 0.1)
+    love.graphics.circle("fill", textX + 12, rowY + 15, 12)
+    love.graphics.setColor(0.7, 0.5, 0)
     love.graphics.setLineWidth(2)
-    love.graphics.circle("line", iconX + 8, rowY + 10, 10 * coinPulse)
+    love.graphics.circle("line", textX + 12, rowY + 15, 12)
+    love.graphics.setColor(1, 0.9, 0.3)
+    love.graphics.circle("fill", textX + 10, rowY + 13, 4)
     love.graphics.setLineWidth(1)
     
-    -- Money text with bounce effect and outline
+    -- Money value (with bounce)
     love.graphics.push()
-    local textCenterX = textX + 30
-    local textCenterY = rowY + 10
-    love.graphics.translate(textCenterX, textCenterY)
+    love.graphics.translate(textX + 50, rowY + 10)
     love.graphics.scale(bounceScale, bounceScale)
-    love.graphics.translate(-textCenterX, -textCenterY)
-    
-    local moneyColor = Config.visual.colors.money or {1, 0.9, 0.3}
-    UI.printOutlined(tostring(displayMoney), textX, rowY, outlineColor, moneyColor, 1)
+    love.graphics.translate(-(textX + 50), -(rowY + 10))
+    love.graphics.setColor(0.1, 0.1, 0.1)
+    love.graphics.print(tostring(displayMoney), textX + 35, rowY)
     love.graphics.pop()
     
-    -- Pending coins indicator
+    -- Pending indicator
     if isPending then
-        love.graphics.setColor(0.4, 1, 0.4, 0.9)
         love.graphics.setFont(_G.Fonts.small)
-        local pendingText = "+" .. math.ceil(Effects.pendingCoins)
-        love.graphics.print(pendingText, textX + 60, rowY + 3)
-        love.graphics.setFont(_G.Fonts.normal)
+        love.graphics.setColor(0.2, 0.6, 0.2)
+        love.graphics.print("+" .. math.ceil(Effects.pendingCoins), textX + 90, rowY + 8)
     end
     
-    -- Rent row
-    rowY = rowY + 30
+    -- === RENT ROW ===
+    rowY = rowY + 38
+    love.graphics.setFont(_G.Fonts.normal)
     local rentProgress = math.min(displayMoney / rent, 1)
     
-    -- Rent icon (house)
-    love.graphics.setColor(1, 0.5, 0.5)
-    love.graphics.polygon("fill", iconX + 8, rowY + 2, iconX + 2, rowY + 10, iconX + 14, rowY + 10)
-    love.graphics.rectangle("fill", iconX + 4, rowY + 10, 8, 8)
+    -- Draw house icon
+    love.graphics.setColor(0.7, 0.3, 0.3)
+    love.graphics.polygon("fill", textX + 12, rowY, textX + 2, rowY + 10, textX + 22, rowY + 10)
+    love.graphics.rectangle("fill", textX + 5, rowY + 10, 14, 12)
+    love.graphics.setColor(0.5, 0.2, 0.2)
+    love.graphics.setLineWidth(2)
+    love.graphics.polygon("line", textX + 12, rowY, textX + 2, rowY + 10, textX + 22, rowY + 10)
+    love.graphics.setLineWidth(1)
     
-    -- Rent text with outline
-    local rentColor = Config.visual.colors.rent or {1, 0.6, 0.5}
-    UI.printOutlined(tostring(rent), textX, rowY, outlineColor, rentColor, 1)
+    -- Rent value
+    love.graphics.setColor(0.4, 0.15, 0.15)
+    love.graphics.print(tostring(rent), textX + 35, rowY + 2)
     
-    -- Progress bar
-    local barX, barW, barH = textX + 50, 80, 12
-    love.graphics.setColor(0.2, 0.15, 0.15)
-    love.graphics.rectangle("fill", barX, rowY + 4, barW, barH, 3, 3)
-    
+    -- Progress bar (manga style: thick border)
+    local barX, barW, barH = textX + 70, 100, 16
+    -- Bar background
+    love.graphics.setColor(0.85, 0.85, 0.85)
+    love.graphics.rectangle("fill", barX, rowY + 3, barW, barH, 2, 2)
+    -- Bar fill
     if rentProgress >= 1 then
-        love.graphics.setColor(0.3, 0.8, 0.3)
+        love.graphics.setColor(0.3, 0.7, 0.3)
     else
-        love.graphics.setColor(0.9, 0.5, 0.2)
+        love.graphics.setColor(0.85, 0.5, 0.2)
     end
-    love.graphics.rectangle("fill", barX, rowY + 4, barW * rentProgress, barH, 3, 3)
-    love.graphics.setColor(0.5, 0.4, 0.4)
-    love.graphics.rectangle("line", barX, rowY + 4, barW, barH, 3, 3)
+    love.graphics.rectangle("fill", barX + 2, rowY + 5, (barW - 4) * rentProgress, barH - 4, 1, 1)
+    -- Bar border (thick black)
+    love.graphics.setColor(0.15, 0.15, 0.15)
+    love.graphics.setLineWidth(2)
+    love.graphics.rectangle("line", barX, rowY + 3, barW, barH, 2, 2)
+    love.graphics.setLineWidth(1)
     
-    -- Spins row
-    rowY = rowY + 30
-    
-    -- Spin icons (dots)
-    for i = 1, 5 do
-        local dotX = iconX + (i - 1) * 8
-        if i <= turns then
-            love.graphics.setColor(0.4, 1, 0.5)
-            love.graphics.circle("fill", dotX + 4, rowY + 10, 5)
-        else
-            love.graphics.setColor(0.3, 0.3, 0.3)
-            love.graphics.circle("fill", dotX + 4, rowY + 10, 4)
-        end
+    -- === SPINS ROW ===
+    rowY = rowY + 32
+    -- Draw spin dots
+    for i = 1, math.min(turns, 6) do
+        love.graphics.setColor(0.2, 0.6, 0.3)
+        love.graphics.circle("fill", textX + 5 + (i-1) * 12, rowY + 10, 5)
     end
+    love.graphics.setColor(0.2, 0.5, 0.2)
+    love.graphics.print(turns .. " " .. i18n.t("ui_spins_unit"), textX + 80, rowY + 2)
     
-    -- Spins text with outline
-    local spinsColor = Config.visual.colors.positive or {0.5, 1, 0.6}
-    UI.printOutlined(turns .. " " .. i18n.t("ui_spins_unit"), textX + 10, rowY, outlineColor, spinsColor, 1)
+    -- === INVENTORY ROW ===
+    rowY = rowY + 28
+    -- Draw box icon
+    love.graphics.setColor(0.5, 0.5, 0.8)
+    love.graphics.rectangle("fill", textX + 4, rowY + 6, 16, 12, 2, 2)
+    love.graphics.rectangle("fill", textX + 2, rowY + 4, 20, 5, 2, 2)
+    love.graphics.setColor(0.3, 0.3, 0.6)
+    love.graphics.setLineWidth(1.5)
+    love.graphics.rectangle("line", textX + 4, rowY + 6, 16, 12, 2, 2)
+    love.graphics.setLineWidth(1)
     
-    -- Inventory row
-    rowY = rowY + 30
+    love.graphics.setColor(0.25, 0.25, 0.45)
+    love.graphics.print(inventoryCount .. " " .. i18n.t("ui_symbols_unit"), textX + 35, rowY + 2)
     
-    -- Inventory icon (box)
-    love.graphics.setColor(0.6, 0.6, 1)
-    love.graphics.rectangle("fill", iconX + 2, rowY + 4, 12, 10, 2, 2)
-    love.graphics.rectangle("fill", iconX, rowY + 2, 16, 4, 2, 2)
-    
-    -- Inventory text with outline
-    local invColor = Config.visual.colors.neutral or {0.7, 0.7, 1}
-    UI.printOutlined(inventoryCount .. " " .. i18n.t("ui_symbols_unit"), textX, rowY, outlineColor, invColor, 1)
-    
-    -- Floor row
-    rowY = rowY + 30
-    local floorColor = Config.visual.colors.text or {0.9, 0.7, 0.4}
-    UI.printOutlined(string.format(i18n.t("ui_floor"), floor), textX, rowY, outlineColor, floorColor, 1)
+    -- === FLOOR ROW ===
+    rowY = rowY + 28
+    love.graphics.setColor(0.15, 0.15, 0.15)
+    love.graphics.setFont(_G.Fonts.normal)
+    love.graphics.print(string.format(i18n.t("ui_floor"), floor), textX + 15, rowY)
     
     -- ========== SPIN BUTTON ==========
     local btnW, btnH = 440, 75
@@ -613,10 +591,19 @@ function UI.update(dt)
 end
 
 function UI.drawLogs(logs, x, y)
+    local Config = require("src.core.config")
     love.graphics.setFont(_G.Fonts.small)
-    love.graphics.setColor(0.8, 0.8, 0.8)
+    
+    -- Use theme-appropriate colors
+    local textColor = Config.visual.colors.text or {0.2, 0.2, 0.2}
+    local outlineColor = {1, 1, 1}
+    if Config.theme ~= "manga" then
+        textColor = {0.7, 0.7, 0.7}
+        outlineColor = {0, 0, 0}
+    end
+    
     for i, log in ipairs(logs) do
-        love.graphics.print(log, x, y + (i-1) * 18)
+        UI.printOutlined(log, x, y + (i-1) * 20, outlineColor, textColor, 1)
     end
     love.graphics.setFont(_G.Fonts.normal)
 end
