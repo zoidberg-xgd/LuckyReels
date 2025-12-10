@@ -1,0 +1,3 @@
+[submodule "lib/gamelib"]
+	path = lib/gamelib
+	url = https://github.com/zoidberg-xgd/GameLib.git
