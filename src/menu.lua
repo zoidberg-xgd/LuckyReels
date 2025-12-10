@@ -296,17 +296,55 @@ function Menu:drawSettings()
     love.graphics.printf(i18n.t("menu_settings") or "设置", panelX, panelY + 20, panelW, "center")
     
     -- Language setting
-    local settingY = panelY + 80
+    local settingY = panelY + 100
     love.graphics.setFont(_G.Fonts.normal)
     love.graphics.setColor(0.8, 0.8, 0.9)
-    love.graphics.print(i18n.t("settings_language") or "语言", panelX + 30, settingY)
+    love.graphics.print(i18n.t("settings_language") or "语言", panelX + 40, settingY)
     
-    -- Language buttons
-    self:drawButton("lang_zh", panelX + 250, settingY + 12, "中文")
-    self:drawButton("lang_en", panelX + 350, settingY + 12, "EN")
+    -- Language buttons (side by side)
+    self:drawSmallButton("lang_zh", panelX + 200, settingY, "中文", self.settings.language == "zh")
+    self:drawSmallButton("lang_en", panelX + 290, settingY, "EN", self.settings.language == "en")
     
     -- Back button
     self:drawButton("back", screenW/2, panelY + panelH - 50, i18n.t("menu_back") or "返回")
+end
+
+function Menu:drawSmallButton(id, x, y, text, selected)
+    local w, h = 70, 35
+    
+    if not self.buttonScales[id] then
+        self.buttonScales[id] = 1.0
+    end
+    
+    local isHovered = self.hoverButton == id
+    
+    -- Button background
+    if selected then
+        love.graphics.setColor(0.3, 0.6, 0.4, 0.9)
+    elseif isHovered then
+        love.graphics.setColor(0.3, 0.4, 0.5, 0.9)
+    else
+        love.graphics.setColor(0.15, 0.2, 0.25, 0.8)
+    end
+    love.graphics.rectangle("fill", x, y - 5, w, h, 6, 6)
+    
+    -- Border
+    if selected then
+        love.graphics.setColor(0.5, 0.9, 0.6)
+    else
+        love.graphics.setColor(0.3, 0.4, 0.5)
+    end
+    love.graphics.setLineWidth(2)
+    love.graphics.rectangle("line", x, y - 5, w, h, 6, 6)
+    
+    -- Text
+    love.graphics.setFont(_G.Fonts.normal)
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.printf(text, x, y + 2, w, "center")
+    
+    -- Register zone
+    self._zones = self._zones or {}
+    self._zones[id] = {x = x, y = y - 5, w = w, h = h}
 end
 
 function Menu:drawCredits()
@@ -314,7 +352,7 @@ function Menu:drawCredits()
     local screenH = love.graphics.getHeight()
     
     -- Panel
-    local panelW, panelH = 400, 300
+    local panelW, panelH = 400, 320
     local panelX = (screenW - panelW) / 2
     local panelY = (screenH - panelH) / 2
     
@@ -338,18 +376,20 @@ function Menu:drawCredits()
         "Inspired by Luck be a Landlord",
         "",
         "Made with LÖVE2D",
-        "",
-        "Thank you for playing!",
     }
     
-    local y = panelY + 80
+    local y = panelY + 75
     for _, line in ipairs(credits) do
         love.graphics.printf(line, panelX, y, panelW, "center")
-        y = y + 25
+        y = y + 28
     end
     
+    -- Thank you message
+    love.graphics.setColor(0.6, 0.7, 0.8)
+    love.graphics.printf("Thank you for playing!", panelX, panelY + panelH - 100, panelW, "center")
+    
     -- Back button
-    self:drawButton("back", screenW/2, panelY + panelH - 50, i18n.t("menu_back") or "返回")
+    self:drawButton("back", screenW/2, panelY + panelH - 45, i18n.t("menu_back") or "返回")
 end
 
 --------------------------------------------------------------------------------

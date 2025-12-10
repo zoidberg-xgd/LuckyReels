@@ -25,11 +25,34 @@ function i18n.load(lang)
 end
 
 function i18n.t(key, ...)
-    local val = i18n.strings[key] or key
+    -- Check main strings first
+    local val = i18n.strings[key]
+    
+    -- Check mod-added translations (in i18n.locales)
+    if not val and i18n.locales and i18n.locales[i18n.current_lang] then
+        val = i18n.locales[i18n.current_lang][key]
+    end
+    
+    -- Fallback to key
+    val = val or key
+    
     if select("#", ...) > 0 then
         return string.format(val, ...)
     end
     return val
+end
+
+-- Storage for mod-added translations
+i18n.locales = {}
+
+-- Set language (alias for load)
+function i18n.setLanguage(lang)
+    i18n.load(lang)
+end
+
+-- Get current language
+function i18n.getLanguage()
+    return i18n.current_lang
 end
 
 -- Toggle to next language
