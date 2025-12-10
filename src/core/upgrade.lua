@@ -34,13 +34,18 @@ Upgrade.CONFIG = {
         [3] = "精良",
     },
     
-    -- Quality colors
-    quality_colors = {
-        [1] = {0.7, 0.7, 0.7},
-        [2] = {0.4, 0.7, 1},
-        [3] = {1, 0.8, 0.2},
-    }
+    -- Quality colors (use Config.visual.quality_colors if available)
+    quality_colors = nil,  -- Will be loaded from Config
 }
+
+-- Load quality colors from Config
+local function getQualityColors()
+    if not Upgrade.CONFIG.quality_colors then
+        local Config = require("src.core.config")
+        Upgrade.CONFIG.quality_colors = Config.visual.quality_colors
+    end
+    return Upgrade.CONFIG.quality_colors
+end
 
 --------------------------------------------------------------------------------
 -- Core Methods
@@ -60,7 +65,8 @@ end
 --- Get symbol quality color
 function Upgrade.getQualityColor(symbol)
     local level = Upgrade.getLevel(symbol)
-    return Upgrade.CONFIG.quality_colors[level] or {0.7, 0.7, 0.7}
+    local colors = getQualityColors()
+    return colors[level] or {0.7, 0.7, 0.7}
 end
 
 --- Check if symbol can be upgraded

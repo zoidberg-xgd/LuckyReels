@@ -72,28 +72,21 @@ function Effects.init()
 end
 
 function Effects.loadSounds()
-    local soundFiles = {
-        spin_start = "sounds/spin_start.wav",
-        spin_tick = "sounds/tick.wav",
-        reel_stop = "sounds/stop.wav",
-        win = "sounds/win.wav",
-        big_win = "sounds/big_win.wav",
-        coin = "sounds/coin.wav",
-        click = "sounds/click.wav",
-        score = "sounds/score.wav",
-    }
+    local Config = require("src.core.config")
     
-    for name, path in pairs(soundFiles) do
+    -- Load sound effects from Config
+    for name, path in pairs(Config.audio.sounds) do
         if love.filesystem.getInfo(path) then
             Effects.sounds[name] = love.audio.newSource(path, "static")
         end
     end
     
-    -- Load BGM
-    if love.filesystem.getInfo("music/bgm.wav") then
-        Effects.bgm = love.audio.newSource("music/bgm.wav", "stream")
-        Effects.bgm:setLooping(true)
-        Effects.bgm:setVolume(0.3)
+    -- Load BGM from Config
+    local bgmConfig = Config.audio.bgm
+    if love.filesystem.getInfo(bgmConfig.path) then
+        Effects.bgm = love.audio.newSource(bgmConfig.path, "stream")
+        Effects.bgm:setLooping(bgmConfig.looping)
+        Effects.bgm:setVolume(bgmConfig.volume)
     end
 end
 

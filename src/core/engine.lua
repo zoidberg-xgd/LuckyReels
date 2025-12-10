@@ -47,13 +47,12 @@ function Engine:init(config)
     
     -- Collecting state timer (wait for coin animations)
     self.collect_timer = 0
-    self.collect_min_wait = 0.8  -- Shorter wait, animations are faster now
-    
-    -- Animation state - more dramatic timing for satisfying slot feel
+    -- Animation timing from Config
+    local Config = require("src.core.config")
+    self.collect_min_wait = Config.animation.collect_min_wait
     self.spin_timer = 0
-    self.spin_duration = 2.5 -- Total spin time (longer for anticipation)
-    -- Staggered delays: first reels stop quick, last reel builds suspense
-    self.reel_delays = {0.6, 0.85, 1.15, 1.55, 2.1} -- Stop time for each col (if 5 cols)
+    self.spin_duration = Config.animation.spin_duration
+    self.reel_delays = Config.animation.reel_delays
     
     -- Load starting inventory
     if self.config.starting_inventory then

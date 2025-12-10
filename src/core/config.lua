@@ -206,7 +206,26 @@ Config.visual = {
 Config.audio = {
     master_volume = 1.0,
     sfx_volume = 0.7,
-    music_volume = 0.5,
+    music_volume = 0.3,
+    
+    -- Sound effect files
+    sounds = {
+        spin_start = "sounds/spin_start.wav",
+        spin_tick = "sounds/tick.wav",
+        reel_stop = "sounds/stop.wav",
+        win = "sounds/win.wav",
+        big_win = "sounds/big_win.wav",
+        coin = "sounds/coin.wav",
+        click = "sounds/click.wav",
+        score = "sounds/score.wav",
+    },
+    
+    -- Background music
+    bgm = {
+        path = "music/bgm.wav",
+        volume = 0.3,
+        looping = true,
+    },
 }
 
 --------------------------------------------------------------------------------
