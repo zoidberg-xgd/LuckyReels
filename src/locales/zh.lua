@@ -1,5 +1,17 @@
 -- src/locales/zh.lua
 return {
+    -- ========== MENU ==========
+    menu_subtitle = "幸运转轴",
+    menu_continue = "继续游戏",
+    menu_new_game = "新游戏",
+    menu_settings = "设置",
+    menu_credits = "制作人员",
+    menu_quit = "退出",
+    menu_back = "返回",
+    settings_language = "语言",
+    settings_music = "音乐",
+    settings_sfx = "音效",
+    
     -- ========== SYMBOLS ==========
     symbol_coin_name = "硬币",
     symbol_coin_desc = "提供 1 金币。",

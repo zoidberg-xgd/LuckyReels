@@ -1,5 +1,17 @@
 -- src/locales/en.lua
 return {
+    -- ========== MENU ==========
+    menu_subtitle = "Lucky Reels",
+    menu_continue = "Continue",
+    menu_new_game = "New Game",
+    menu_settings = "Settings",
+    menu_credits = "Credits",
+    menu_quit = "Quit",
+    menu_back = "Back",
+    settings_language = "Language",
+    settings_music = "Music",
+    settings_sfx = "Sound Effects",
+    
     -- ========== SYMBOLS ==========
     symbol_coin_name = "Coin",
     symbol_coin_desc = "+1 coin.",

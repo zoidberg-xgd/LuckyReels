@@ -1,8 +1,14 @@
 -- main.lua
 local Game = require("src.game")
+local Menu = require("src.menu")
+local Save = require("src.core.save")
 local i18n = require("src.i18n")
 local Effects = require("src.effects")
 local ModAPI = require("src.core.mod_api")
+
+-- Game state
+local currentScreen = "menu"  -- "menu" or "game"
+local menu = nil
 
 function love.load()
     math.randomseed(os.time())
@@ -15,8 +21,10 @@ function love.load()
     -- Initialize effects system
     Effects.init()
     
-    -- Initialize i18n
-    i18n.load("zh")
+    -- Load settings and set language
+    local settings = Save.loadSettings()
+    local lang = settings and settings.language or "zh"
+    i18n.load(lang)
 
     -- Try to load a Chinese font
     -- Common paths on macOS
@@ -69,15 +77,29 @@ function love.load()
     -- Load mods
     ModAPI.loadMods()
 
-    Game:init()
+    -- Create menu
+    menu = Menu.new()
+    
+    -- Don't init game yet - wait for menu
 end
 
 function love.update(dt)
-    Game:update(dt)
+    if currentScreen == "menu" then
+        menu:update(dt)
+    else
+        Game:update(dt)
+    end
+    
+    -- Always update effects
+    Effects.update(dt)
 end
 
 function love.draw()
-    Game:draw()
+    if currentScreen == "menu" then
+        menu:draw()
+    else
+        Game:draw()
+    end
 end
 
 function love.keypressed(key)
@@ -86,11 +108,61 @@ function love.keypressed(key)
         _G.DEBUG_CHARACTER = not _G.DEBUG_CHARACTER
         print("Character debug: " .. tostring(_G.DEBUG_CHARACTER))
     end
-    Game:keypressed(key)
+    
+    -- Escape to return to menu from game
+    if key == "escape" and currentScreen == "game" then
+        -- Save before returning to menu
+        Save.saveGame(Game)
+        currentScreen = "menu"
+        menu = Menu.new()
+        return
+    end
+    
+    if currentScreen == "menu" then
+        local action = menu:keypressed(key)
+        handleMenuAction(action)
+    else
+        Game:keypressed(key)
+    end
 end
 
 function love.mousepressed(x, y, button, istouch, presses)
-    if Game.mousepressed then
+    if currentScreen == "menu" then
+        local action = menu:mousepressed(x, y, button)
+        handleMenuAction(action)
+    elseif Game.mousepressed then
         Game:mousepressed(x, y, button)
     end
+end
+
+function love.mousemoved(x, y, dx, dy)
+    if currentScreen == "menu" then
+        menu:mousemoved(x, y)
+    end
+end
+
+function handleMenuAction(action)
+    if action == "new_game" then
+        -- Delete old save and start fresh
+        Save.deleteSave()
+        Game:init()
+        currentScreen = "game"
+    elseif action == "continue" then
+        -- Load saved game
+        Game:init()
+        local saveData = Save.loadGame()
+        if saveData then
+            Save.applyToEngine(Game, saveData)
+        end
+        currentScreen = "game"
+    end
+end
+
+-- Auto-save when quitting
+function love.quit()
+    if currentScreen == "game" then
+        Save.saveGame(Game)
+        print("Game auto-saved on quit")
+    end
+    return false
 end

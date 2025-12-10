@@ -3,6 +3,7 @@
 
 local Config = require("src.config")
 local Utils = require("src.utils")
+local Audio = require("src.audio")
 
 local Effects = {}
 
@@ -67,6 +68,9 @@ function Effects.init()
     Effects.scoringQueue = {}
     Effects.currentScoring = nil
     
+    -- Initialize procedural audio
+    Audio.init()
+    
     -- Try to load sounds (gracefully fail if not present)
     Effects.loadSounds()
 end
@@ -113,6 +117,10 @@ end
 
 -- Play a sound effect
 function Effects.playSound(name, volume, pitch)
+    -- Try procedural audio first
+    Audio.play(name, volume, pitch)
+    
+    -- Fallback to loaded sounds
     if Effects.sounds[name] then
         local sound = Effects.sounds[name]:clone()
         sound:setVolume(volume or 1.0)
