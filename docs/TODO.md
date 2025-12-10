@@ -154,7 +154,7 @@ function Registry.createSymbol(key)
 
 | 系统 | 文件 | 说明 | 状态 |
 |------|------|------|------|
-| **Entity-Component System** | `lib/ecs.lua` | 轻量ECS，支持组件定义、系统定义、实体查询 | ⬜ |
+| **Entity-Component System** | `lib/ecs.lua` | 轻量ECS，支持组件定义、系统定义、实体查询 | ✅ |
 
 ### PR 策略
 
